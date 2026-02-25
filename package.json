@@ -1,0 +1,16 @@
+{
+  "name": "open-medical-scribe",
+  "version": "0.1.0",
+  "description": "Open source medical scribe backend with pluggable API and local providers",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
+
