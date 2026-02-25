@@ -33,6 +33,8 @@ let isRecording = false;
 let streamClient = null;
 let streamFinalTranscript = "";
 let streamInterimText = "";
+let streamFallbackTimer = null;
+let noteGenerationStarted = false;
 
 boot();
 
@@ -187,6 +189,9 @@ function handleStreamSessionEnd(msg) {
   streamFinalTranscript = transcript;
   streamInterimText = "";
   renderStreamTranscript();
+  // Guard against double note generation
+  if (streamFallbackTimer) { clearTimeout(streamFallbackTimer); streamFallbackTimer = null; }
+  noteGenerationStarted = true;
   generateNoteFromTranscript(transcript);
 }
 
@@ -222,6 +227,8 @@ async function startRecording() {
     speechInterimTranscript = "";
     streamFinalTranscript = "";
     streamInterimText = "";
+    noteGenerationStarted = false;
+    if (streamFallbackTimer) { clearTimeout(streamFallbackTimer); streamFallbackTimer = null; }
 
     mediaRecorder = mimeType
       ? new MediaRecorder(stream, { mimeType })
@@ -289,13 +296,13 @@ function stopRecording() {
     streamClient.stop();
     // Also stop MediaRecorder
     if (mediaRecorder?.state === "recording") mediaRecorder.stop();
-    // Fallback: if session_end doesn't arrive in 15s, use what we have
-    setTimeout(() => {
-      if (recLabel.textContent === "Processing...") {
+    // Fallback: if session_end doesn't arrive in 30s, use what we have
+    streamFallbackTimer = setTimeout(() => {
+      if (!noteGenerationStarted) {
         const transcript = streamFinalTranscript || "";
         generateNoteFromTranscript(transcript);
       }
-    }, 15000);
+    }, 30000);
   } else if (mediaRecorder?.state === "recording") {
     // Batch mode — wait for blob then generate note
     mediaRecorder.addEventListener("stop", () => generateNote(), { once: true });
