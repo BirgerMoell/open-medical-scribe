@@ -212,6 +212,12 @@
       gap: 20px;
     }
 
+    .downloads-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
     .feature-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -530,6 +536,10 @@
         grid-template-columns: 1fr;
       }
 
+      .downloads-grid {
+        grid-template-columns: 1fr;
+      }
+
       .hero h1 {
         font-size: 2rem;
       }
@@ -571,6 +581,7 @@
         <li><a href="#features">Features</a></li>
         <li><a href="#architecture">Architecture</a></li>
         <li><a href="#getting-started">Get Started</a></li>
+        <li><a href="#downloads">Downloads</a></li>
         <li><a href="#providers">Providers</a></li>
         <li><a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a></li>
       </ul>
@@ -580,7 +591,7 @@
   <!-- Hero -->
   <header class="hero">
     <h1><span class="gradient">Open Medical Scribe</span></h1>
-    <p class="subtitle">Open-source AI medical documentation &mdash; fully local, fully private</p>
+    <p class="subtitle">Open-source AI medical documentation &mdash; fully local, fully private. Available as a web app, desktop app, or CLI.</p>
     <div class="cta-group">
       <a href="#getting-started" class="btn btn-primary">
         Get Started
@@ -740,6 +751,41 @@
     </div>
   </section>
 
+  <!-- Downloads -->
+  <section id="downloads">
+    <p class="section-label">Downloads</p>
+    <h2 class="section-title">Desktop Application</h2>
+    <p class="section-desc">Download the Electron desktop app for macOS and Windows. Choose between a light build that downloads models on first run, or a full offline build with everything bundled.</p>
+
+    <div class="downloads-grid">
+      <div class="feature-card">
+        <div class="feature-icon icon-green">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <h3>Light Build (~150 MB)</h3>
+        <p>Clean install with no bundled models. The Whisper ONNX speech recognition model downloads automatically on first use (~1.1 GB). Requires external Ollama for note generation.</p>
+        <p style="margin-top: 12px; font-size: 0.85rem; color: var(--accent-green);"><strong>Best for:</strong> users who want a smaller download and have internet access</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <h3>Full Build (~6 GB)</h3>
+        <p>Everything bundled for offline use. Includes Whisper ONNX model for local speech recognition and Llama 3.1 8B for local note generation via llama-server. Works completely offline.</p>
+        <p style="margin-top: 12px; font-size: 0.85rem; color: var(--accent-purple);"><strong>Best for:</strong> air-gapped environments, offline clinics, maximum privacy</p>
+      </div>
+    </div>
+  </section>
+
   <!-- Getting Started -->
   <section id="getting-started">
     <p class="section-label">Getting Started</p>
@@ -762,6 +808,23 @@
 
     <p class="getting-started-note">
       Requires Node.js 22 or later. Copy <code>.env.example</code> to <code>.env</code> and configure your preferred providers and API keys before starting.
+    </p>
+
+    <h3 style="margin-top: 40px; margin-bottom: 16px; font-size: 1.15rem;">Building the Desktop App</h3>
+    <div class="code-block">
+      <span class="comment"># Light build (models download on first run)</span><br>
+      <span class="cmd">npm run electron:build:light:mac</span><br>
+      <br>
+      <span class="comment"># Full build (download models first, then build)</span><br>
+      <span class="cmd">npm run models:download:whisper</span><br>
+      <span class="cmd">npm run models:download:llm</span><br>
+      <span class="cmd">npm run electron:build:full:mac</span><br>
+      <br>
+      <span class="comment"># For Windows, replace :mac with :win</span>
+    </div>
+    <p class="getting-started-note">
+      The full build bundles a llama-server binary and Llama 3.1 8B GGUF model (~4.7 GB).
+      The Electron app automatically detects bundled models and configures providers accordingly.
     </p>
   </section>
 

@@ -3,12 +3,10 @@
   "productName": "Open Medical Scribe",
   "asar": true,
   "files": [
-    "src/**",
-    "public/**",
-    "electron/**",
-    "node_modules/**",
-    "package.json",
-    "!node_modules/@huggingface/transformers/.cache/**"
+    "src",
+    "public",
+    "electron",
+    "package.json"
   ],
   "mac": {
     "target": "dmg",

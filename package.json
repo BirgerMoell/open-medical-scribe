@@ -13,8 +13,8 @@
     "build:cli:transcribe": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js",
     "build:cli:note": "bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js",
     "electron:dev": "electron .",
-    "electron:build:light:mac": "electron-builder --mac --config electron-builder.light.json",
-    "electron:build:light:win": "electron-builder --win --config electron-builder.light.json",
+    "electron:build:light:mac": "electron-builder --mac",
+    "electron:build:light:win": "electron-builder --win",
     "electron:build:full:mac": "electron-builder --mac --config electron-builder.full.json",
     "electron:build:full:win": "electron-builder --win --config electron-builder.full.json",
     "models:download:whisper": "node scripts/download-whisper-model.js",
@@ -32,6 +32,25 @@
     "node": ">=22"
   },
   "build": {
-    "extends": "electron-builder.light.json"
+    "appId": "com.openmedicalscribe.app",
+    "productName": "Open Medical Scribe",
+    "asar": true,
+    "files": [
+      "src",
+      "public",
+      "electron",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.medical"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
