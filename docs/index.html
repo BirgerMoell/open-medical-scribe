@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Medical Scribe — Open-Source AI Medical Documentation</title>
+  <meta name="description" content="Open-source AI medical documentation that runs fully local and fully private. Real-time transcription with Whisper, structured note generation with your choice of LLM.">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-code: #1c2128;
+      --border: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #58a6ff;
+      --accent-subtle: #1f6feb;
+      --accent-green: #3fb950;
+      --accent-purple: #bc8cff;
+      --accent-orange: #d29922;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --font-mono: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+      --max-width: 1120px;
+      --radius: 8px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* ---- NAV ---- */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(13, 17, 23, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    nav .logo {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+
+    nav .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    nav .nav-links a {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav .nav-links a:hover {
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      padding: 160px 24px 100px;
+      text-align: center;
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin: 0 auto 40px;
+      line-height: 1.5;
+    }
+
+    .hero .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--accent-subtle);
+      color: #fff;
+      border-color: var(--accent-subtle);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+      border-color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    /* ---- SECTIONS ---- */
+    section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 620px;
+      margin-bottom: 48px;
+      font-size: 1.05rem;
+    }
+
+    /* ---- FEATURES ---- */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--text-muted);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .icon-blue { background: rgba(88, 166, 255, 0.12); color: var(--accent); }
+    .icon-green { background: rgba(63, 185, 80, 0.12); color: var(--accent-green); }
+    .icon-purple { background: rgba(188, 140, 255, 0.12); color: var(--accent-purple); }
+    .icon-orange { background: rgba(210, 153, 34, 0.12); color: var(--accent-orange); }
+
+    .icon-blue svg { stroke: var(--accent); fill: none; }
+    .icon-green svg { stroke: var(--accent-green); fill: none; }
+    .icon-purple svg { stroke: var(--accent-purple); fill: none; }
+    .icon-orange svg { stroke: var(--accent-orange); fill: none; }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    /* ---- ARCHITECTURE ---- */
+    .arch-flow {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      margin-top: 8px;
+    }
+
+    .arch-steps {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .arch-step {
+      text-align: center;
+      flex: 1;
+      min-width: 160px;
+      max-width: 220px;
+      padding: 0 8px;
+    }
+
+    .arch-step .step-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      margin-bottom: 10px;
+    }
+
+    .arch-step .step-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .arch-step .step-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .arch-step .step-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .arch-arrow {
+      display: flex;
+      align-items: center;
+      padding-top: 30px;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .arch-arrow svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--text-muted);
+      fill: none;
+    }
+
+    /* ---- GETTING STARTED ---- */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+    }
+
+    .code-block .comment {
+      color: var(--text-muted);
+    }
+
+    .code-block .cmd {
+      color: var(--accent-green);
+    }
+
+    .getting-started-note {
+      margin-top: 20px;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    /* ---- PROVIDERS TABLE ---- */
+    .providers-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .provider-table-wrap {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .provider-table-wrap h3 {
+      padding: 16px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .provider-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .provider-table th,
+    .provider-table td {
+      text-align: left;
+      padding: 10px 20px;
+      font-size: 0.88rem;
+    }
+
+    .provider-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .provider-table td {
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .provider-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .provider-table .provider-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-local {
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--accent-green);
+    }
+
+    .badge-cloud {
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+    }
+
+    /* ---- SAFETY ---- */
+    .safety-banner {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent-orange);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-top: 48px;
+    }
+
+    .safety-banner h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--accent-orange);
+    }
+
+    .safety-banner p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    footer .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    footer .footer-left {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    footer .footer-links a {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    footer .footer-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .providers-group {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 2.4rem;
+      }
+
+      .arch-steps {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .arch-arrow {
+        transform: rotate(90deg);
+        padding: 8px 0;
+      }
+
+      .arch-step {
+        max-width: 300px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .hero .subtitle {
+        font-size: 1.05rem;
+      }
+
+      .hero {
+        padding: 120px 20px 60px;
+      }
+
+      section {
+        padding: 60px 20px;
+      }
+
+      nav .nav-links {
+        gap: 16px;
+      }
+
+      nav .nav-links a {
+        font-size: 0.82rem;
+      }
+
+      footer .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">Open Medical Scribe</div>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#getting-started">Get Started</a></li>
+        <li><a href="#providers">Providers</a></li>
+        <li><a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <h1><span class="gradient">Open Medical Scribe</span></h1>
+    <p class="subtitle">Open-source AI medical documentation &mdash; fully local, fully private</p>
+    <div class="cta-group">
+      <a href="#getting-started" class="btn btn-primary">
+        Get Started
+      </a>
+      <a href="https://github.com/BirgerMoell/open-medical-scribe" class="btn btn-secondary">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+  </header>
+
+  <!-- Features -->
+  <section id="features">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">Everything you need for AI-assisted clinical documentation</h2>
+    <p class="section-desc">A modular, privacy-first platform that connects real-time audio capture to structured medical notes, with your choice of local or cloud providers.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon icon-blue">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </div>
+        <h3>Real-Time Transcription</h3>
+        <p>Stream audio from the browser via WebSocket for live speech-to-text. Powered by Whisper ONNX running entirely on your local machine -- no audio ever leaves your network.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <h3>AI Note Generation</h3>
+        <p>Transform raw transcripts into structured clinical notes using Ollama (local), OpenAI, Anthropic Claude, or Google Gemini. Choose quality, cost, and privacy tradeoffs per deployment.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-green">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </div>
+        <h3>Multiple Note Formats</h3>
+        <p>Generate SOAP, H&amp;P, Progress, DAP, and Procedure notes out of the box. Swedish journal format supported alongside international standards.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-orange">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h3>Privacy-First Design</h3>
+        <p>Run the entire pipeline on your own hardware. In local mode, no patient data ever leaves your machine. Configurable PHI handling for every deployment environment.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-blue">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </div>
+        <h3>Modular CLI Tools</h3>
+        <p>Use <code>scribe-transcribe</code> and <code>scribe-note</code> as standalone binaries for scripting and batch workflows. Build pipelines without the web server.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+        <h3>Pluggable Providers</h3>
+        <p>Swap transcription and LLM backends via settings or environment variables. Run fully local, fully cloud, or any hybrid combination for your needs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section id="architecture">
+    <p class="section-label">Architecture</p>
+    <h2 class="section-title">How it works</h2>
+    <p class="section-desc">A four-stage pipeline from microphone to structured clinical note, with each component independently replaceable.</p>
+
+    <div class="arch-flow">
+      <div class="arch-steps">
+        <div class="arch-step">
+          <div class="step-box">
+            <div class="step-num">Step 1</div>
+            <div class="step-title">Audio Capture</div>
+            <div class="step-desc">Browser records audio from the clinician's microphone and streams chunks over a WebSocket connection.</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <div class="arch-step">
+          <div class="step-box">
+            <div class="step-num">Step 2</div>
+            <div class="step-title">WebSocket Server</div>
+            <div class="step-desc">Node.js server receives audio streams, buffers them, and routes to the configured transcription provider.</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <div class="arch-step">
+          <div class="step-box">
+            <div class="step-num">Step 3</div>
+            <div class="step-title">Local Transcription</div>
+            <div class="step-desc">Whisper ONNX transcribes speech to text locally. No audio data is sent to external services.</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <div class="arch-step">
+          <div class="step-box">
+            <div class="step-num">Step 4</div>
+            <div class="step-title">Note Generation</div>
+            <div class="step-desc">LLM transforms the transcript into a structured clinical note (SOAP, H&amp;P, Progress, and more).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Getting Started -->
+  <section id="getting-started">
+    <p class="section-label">Getting Started</p>
+    <h2 class="section-title">Up and running in under a minute</h2>
+    <p class="section-desc">Clone the repository, install dependencies, and start the server. The browser UI opens automatically.</p>
+
+    <div class="code-block">
+      <span class="comment"># Clone the repository</span><br>
+      <span class="cmd">git clone https://github.com/BirgerMoell/open-medical-scribe</span><br>
+      <span class="cmd">cd open-medical-scribe</span><br>
+      <br>
+      <span class="comment"># Install dependencies</span><br>
+      <span class="cmd">npm install</span><br>
+      <br>
+      <span class="comment"># Start the server</span><br>
+      <span class="cmd">npm start</span><br>
+      <br>
+      <span class="comment"># Open http://localhost:8787</span>
+    </div>
+
+    <p class="getting-started-note">
+      Requires Node.js 22 or later. Copy <code>.env.example</code> to <code>.env</code> and configure your preferred providers and API keys before starting.
+    </p>
+  </section>
+
+  <!-- Providers -->
+  <section id="providers">
+    <p class="section-label">Providers</p>
+    <h2 class="section-title">Supported providers</h2>
+    <p class="section-desc">Mix and match local and cloud providers for transcription and note generation. Switch backends with a single configuration change.</p>
+
+    <div class="providers-group">
+      <div class="provider-table-wrap">
+        <h3>Transcription</h3>
+        <table class="provider-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="provider-name">Whisper ONNX</td>
+              <td><span class="badge badge-local">Local</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">faster-whisper</td>
+              <td><span class="badge badge-local">Local</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">whisper.cpp</td>
+              <td><span class="badge badge-local">Local</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">OpenAI Whisper</td>
+              <td><span class="badge badge-cloud">Cloud</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">Deepgram</td>
+              <td><span class="badge badge-cloud">Cloud</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">Google Cloud Speech</td>
+              <td><span class="badge badge-cloud">Cloud</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">Berget AI</td>
+              <td><span class="badge badge-cloud">Cloud (EU)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="provider-table-wrap">
+        <h3>Note Generation</h3>
+        <table class="provider-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="provider-name">Ollama</td>
+              <td><span class="badge badge-local">Local</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">OpenAI</td>
+              <td><span class="badge badge-cloud">Cloud</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">Anthropic Claude</td>
+              <td><span class="badge badge-cloud">Cloud</span></td>
+            </tr>
+            <tr>
+              <td class="provider-name">Google Gemini</td>
+              <td><span class="badge badge-cloud">Cloud</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="safety-banner">
+      <h3>Important Safety Note</h3>
+      <p>Open Medical Scribe is an assistive documentation tool, not a diagnostic system. All generated notes are drafts that require clinical review and sign-off before use in patient care. Always verify the content against your own clinical judgment.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        MIT License &middot; Open Medical Scribe
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a></li>
+        <li><a href="https://github.com/BirgerMoell/open-medical-scribe/issues">Issues</a></li>
+        <li><a href="https://github.com/BirgerMoell/open-medical-scribe/blob/main/LICENSE">License</a></li>
+      </ul>
+    </div>
+  </footer>
+
+</body>
+</html>

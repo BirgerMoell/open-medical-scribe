@@ -4,19 +4,50 @@
   "description": "Open source medical scribe backend with pluggable API and local providers",
   "type": "module",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node --test",
     "build:cli": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js && bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js",
     "build:cli:transcribe": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js",
-    "build:cli:note": "bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js"
+    "build:cli:note": "bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js",
+    "electron:dev": "electron .",
+    "electron:build:mac": "electron-builder --mac",
+    "electron:build:win": "electron-builder --win"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
     "ws": "^8.18.0"
   },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
   "engines": {
     "node": ">=22"
+  },
+  "build": {
+    "appId": "com.openmedicalscribe.app",
+    "productName": "Open Medical Scribe",
+    "asar": true,
+    "files": [
+      "src/**",
+      "public/**",
+      "electron/**",
+      "node_modules/**",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.medical"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
