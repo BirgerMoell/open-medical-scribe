@@ -107,6 +107,9 @@ async function startStreaming(opts = {}, callbacks) {
           callbacks.onUtteranceEnd();
         } else if (msg.type === "session_end") {
           callbacks.onSessionEnd(msg);
+          // Session complete — clean up the WebSocket
+          cleanup();
+          callbacks.onStateChange("Stopped");
         } else if (msg.type === "error") {
           callbacks.onError(msg.message);
         }
@@ -141,16 +144,32 @@ function stopStreaming(callbacks) {
   if (!streaming) return;
   streaming = false;
 
-  // Send stop message before closing
+  // Stop sending audio (disconnect worklet) but keep WebSocket open for session_end
+  if (workletNode) {
+    workletNode.disconnect();
+    workletNode = null;
+  }
+  if (sourceNode) {
+    sourceNode.disconnect();
+    sourceNode = null;
+  }
+  if (micStream) {
+    for (const track of micStream.getTracks()) track.stop();
+    micStream = null;
+  }
+
+  // Send stop message — server will run final transcription and send session_end
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: "stop" }));
   }
 
-  // Delay cleanup to let session_end message arrive
+  // Safety timeout: cleanup if session_end never arrives (e.g. model still loading)
   setTimeout(() => {
-    cleanup();
-    callbacks.onStateChange("Stopped");
-  }, 2000);
+    if (ws) {
+      cleanup();
+      callbacks.onStateChange("Stopped");
+    }
+  }, 60000);
 }
 
 function cleanup() {

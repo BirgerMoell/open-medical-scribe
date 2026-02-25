@@ -132,20 +132,22 @@ export function attachStreamHandler(server, config) {
       const s = session;
       session = null;
 
-      s.close();
+      await s.close();
 
       // Flush remaining utterance
       if (currentUtterance.parts.length) {
         utterances.push({ ...currentUtterance });
       }
 
-      // Build full transcript with speaker labels
+      // Build full transcript — only add speaker labels if we have real speaker IDs
       const speakers = new Set();
+      utterances.forEach((u) => speakers.add(u.speaker));
+      const hasRealSpeakers = [...speakers].some((s) => s >= 0);
       const fullTranscript = utterances
         .map((u) => {
-          speakers.add(u.speaker);
-          const label = speakerLabel(u.speaker);
-          return `${label}: ${u.parts.join(" ")}`;
+          const text = u.parts.join(" ");
+          if (!hasRealSpeakers) return text;
+          return `${speakerLabel(u.speaker)}: ${text}`;
         })
         .join("\n");
 

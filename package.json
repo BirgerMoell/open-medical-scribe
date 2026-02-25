@@ -13,10 +13,10 @@
     "build:cli:note": "bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=22"
   }
 }
-

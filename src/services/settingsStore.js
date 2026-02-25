@@ -60,6 +60,11 @@ export function applySavedSettings(config) {
       }
     }
   }
+
+  // Auto-configure streaming provider when whisper-onnx is selected
+  if (config.transcriptionProvider === "whisper-onnx") {
+    config.streaming.transcriptionProvider = "whisper-stream";
+  }
 }
 
 /**
@@ -119,6 +124,9 @@ export function configToSettingsResponse(config) {
       transcriptionProvider: config.streaming.transcriptionProvider,
       diarizeSidecarUrl: config.streaming.diarizeSidecarUrl,
       diarizeOnEnd: config.streaming.diarizeOnEnd,
+      whisperModel: config.streaming.whisperModel,
+      whisperLanguage: config.streaming.whisperLanguage,
+      whisperIntervalMs: config.streaming.whisperIntervalMs,
     },
   };
 }

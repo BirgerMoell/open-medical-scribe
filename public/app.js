@@ -1,3 +1,5 @@
+import { initStreaming } from "/stream.js";
+
 const recordBtn = document.getElementById("record-btn");
 const recDot = document.getElementById("rec-dot");
 const recLabel = document.getElementById("rec-label");
@@ -10,7 +12,9 @@ const noteStatus = document.getElementById("note-status");
 const noteModelEl = document.getElementById("note-model");
 const copyBtn = document.getElementById("copy-btn");
 
-const LOCAL_PROVIDERS = new Set(["ollama", "whisper.cpp", "faster-whisper", "mock"]);
+const LOCAL_PROVIDERS = new Set([
+  "ollama", "whisper.cpp", "faster-whisper", "mock", "whisper-stream", "whisper-onnx",
+]);
 
 let settings = {};
 let mediaRecorder = null;
@@ -24,6 +28,11 @@ let speechFinalTranscript = "";
 let speechInterimTranscript = "";
 let speechShouldRun = false;
 let isRecording = false;
+
+// Streaming state
+let streamClient = null;
+let streamFinalTranscript = "";
+let streamInterimText = "";
 
 boot();
 
@@ -45,7 +54,16 @@ async function loadSettings() {
   }
 }
 
-// True when the user has configured an actual server-side transcription provider
+// True when real-time streaming should be used:
+// either the streaming provider is explicitly set, or whisper-onnx is selected
+function useStreamingTranscription() {
+  const tx = settings.transcriptionProvider || "mock";
+  if (tx === "whisper-onnx") return true;
+  const p = settings.streaming?.transcriptionProvider || "mock-stream";
+  return p !== "mock-stream";
+}
+
+// True when a batch server-side transcription provider is configured (not mock)
 function useServerTranscription() {
   const p = settings.transcriptionProvider || "mock";
   return p !== "mock";
@@ -59,6 +77,16 @@ function modelLabel(provider, model) {
 
 function txModelLabel() {
   const provider = settings.transcriptionProvider || "mock";
+  if (provider === "whisper-onnx") {
+    const m = settings.streaming?.whisperModel || "onnx-community/kb-whisper-large-ONNX";
+    return modelLabel("whisper-onnx", m);
+  }
+  // If streaming is active via streaming settings, show that
+  if (useStreamingTranscription()) {
+    const p = settings.streaming?.transcriptionProvider || "mock-stream";
+    const m = settings.streaming?.whisperModel || p;
+    return modelLabel(p, m);
+  }
   const modelMap = {
     openai: settings.openai?.transcribeModel,
     deepgram: settings.deepgram?.model,
@@ -136,6 +164,48 @@ function setupSpeech() {
   });
 }
 
+// ─── Streaming callbacks ──────────────────────────────────────────────
+
+function handleStreamTranscript(msg) {
+  if (msg.isFinal) {
+    streamFinalTranscript = [streamFinalTranscript, msg.text]
+      .filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    streamInterimText = "";
+  } else {
+    streamInterimText = msg.text || "";
+  }
+  renderStreamTranscript();
+}
+
+function handleStreamUtteranceEnd() {
+  // Utterance boundary — no special action needed
+}
+
+function handleStreamSessionEnd(msg) {
+  // Use the server-assembled full transcript if available
+  const transcript = msg.fullTranscript || streamFinalTranscript;
+  streamFinalTranscript = transcript;
+  streamInterimText = "";
+  renderStreamTranscript();
+  generateNoteFromTranscript(transcript);
+}
+
+function handleStreamStateChange() {
+  // Could update UI with streaming state
+}
+
+function handleStreamError(err) {
+  console.error("[stream]", err);
+}
+
+function renderStreamTranscript() {
+  const display = [streamFinalTranscript, streamInterimText]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  transcriptEl.textContent = display || "";
+}
+
+// ─── Recording ────────────────────────────────────────────────────────
+
 async function toggle() {
   if (isRecording) stopRecording();
   else await startRecording();
@@ -150,6 +220,8 @@ async function startRecording() {
     recordedMimeType = mimeType || "";
     speechFinalTranscript = "";
     speechInterimTranscript = "";
+    streamFinalTranscript = "";
+    streamInterimText = "";
 
     mediaRecorder = mimeType
       ? new MediaRecorder(stream, { mimeType })
@@ -168,8 +240,23 @@ async function startRecording() {
 
     mediaRecorder.start(250);
 
-    // Only use browser SpeechRecognition for live preview if no server provider is configured
-    if (!useServerTranscription()) {
+    // Choose transcription mode
+    if (useStreamingTranscription()) {
+      // Real-time streaming via WebSocket
+      streamClient = initStreaming({
+        onTranscript: handleStreamTranscript,
+        onUtteranceEnd: handleStreamUtteranceEnd,
+        onSessionEnd: handleStreamSessionEnd,
+        onStateChange: handleStreamStateChange,
+        onError: handleStreamError,
+      });
+      const locale = getLocale(settings.country);
+      await streamClient.start({
+        language: locale.lang,
+        country: settings.country,
+      });
+    } else if (!useServerTranscription()) {
+      // Browser SpeechRecognition for live preview (mock provider only)
       startSpeech();
     }
 
@@ -190,7 +277,6 @@ async function startRecording() {
 
 function stopRecording() {
   isRecording = false;
-  if (mediaRecorder?.state === "recording") mediaRecorder.stop();
   stopSpeech();
   stopTimer();
 
@@ -198,7 +284,25 @@ function stopRecording() {
   recDot.classList.remove("is-live");
   recLabel.textContent = "Processing...";
 
-  generateNote();
+  if (streamClient?.isStreaming) {
+    // Stop streaming — the session_end callback will trigger note generation
+    streamClient.stop();
+    // Also stop MediaRecorder
+    if (mediaRecorder?.state === "recording") mediaRecorder.stop();
+    // Fallback: if session_end doesn't arrive in 15s, use what we have
+    setTimeout(() => {
+      if (recLabel.textContent === "Processing...") {
+        const transcript = streamFinalTranscript || "";
+        generateNoteFromTranscript(transcript);
+      }
+    }, 15000);
+  } else if (mediaRecorder?.state === "recording") {
+    // Batch mode — wait for blob then generate note
+    mediaRecorder.addEventListener("stop", () => generateNote(), { once: true });
+    mediaRecorder.stop();
+  } else {
+    generateNote();
+  }
 }
 
 function startSpeech() {
@@ -238,6 +342,8 @@ function renderTranscript() {
   transcriptEl.textContent = text || "";
 }
 
+// ─── Transcription & Note Generation ──────────────────────────────────
+
 async function uploadForTranscription() {
   if (!recordedBlob) return null;
   const locale = getLocale(settings.country);
@@ -263,13 +369,11 @@ async function generateNote() {
   let transcript = "";
 
   if (useServerTranscription()) {
-    // Always use the configured server provider
     recLabel.textContent = "Transcribing...";
     try {
       transcript = await uploadForTranscription() || "";
     } catch { /* */ }
   } else {
-    // Use browser SpeechRecognition result
     transcript = [speechFinalTranscript, speechInterimTranscript]
       .filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
   }
@@ -278,6 +382,10 @@ async function generateNote() {
     transcriptEl.textContent = transcript;
   }
 
+  await generateNoteFromTranscript(transcript);
+}
+
+async function generateNoteFromTranscript(transcript) {
   if (!transcript) {
     recLabel.textContent = "Tap to record";
     noteSection.hidden = false;
@@ -323,6 +431,8 @@ async function generateNote() {
     recLabel.textContent = "Tap to record";
   }
 }
+
+// ─── Utilities ────────────────────────────────────────────────────────
 
 async function copyNote() {
   const text = noteEl.textContent;

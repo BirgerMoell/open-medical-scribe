@@ -38,6 +38,7 @@
           <label>
             Default Note Style
             <select id="defaultNoteStyle">
+              <option value="journal">Journalanteckning (Swedish)</option>
               <option value="soap">SOAP</option>
               <option value="hp">History &amp; Physical</option>
               <option value="progress">Progress Note</option>
@@ -70,6 +71,7 @@
           <label>
             Transcription Provider
             <select id="transcriptionProvider">
+              <option value="whisper-onnx">Whisper ONNX (local)</option>
               <option value="mock">Mock (dev)</option>
               <option value="openai">OpenAI Whisper</option>
               <option value="deepgram">Deepgram</option>
@@ -219,17 +221,26 @@
 
         <!-- Streaming -->
         <section class="settings-card">
-          <h2>Streaming</h2>
+          <h2>Streaming (Live Transcription)</h2>
           <label>
-            Streaming Transcription Provider
+            Streaming Provider
             <select id="streaming-transcriptionProvider">
-              <option value="mock-stream">Mock (dev)</option>
-              <option value="deepgram-stream">Deepgram Streaming</option>
+              <option value="mock-stream">Off (batch only)</option>
+              <option value="whisper-stream">Whisper ONNX (local)</option>
+              <option value="deepgram-stream">Deepgram Streaming (cloud)</option>
             </select>
           </label>
           <label>
+            Whisper ONNX Model
+            <input type="text" id="streaming-whisperModel" placeholder="onnx-community/kb-whisper-large-ONNX" />
+          </label>
+          <label>
+            Whisper Language
+            <input type="text" id="streaming-whisperLanguage" placeholder="sv" />
+          </label>
+          <label>
             Diarization Sidecar URL
-            <input type="text" id="streaming-diarizeSidecarUrl" placeholder="http://localhost:8000" />
+            <input type="text" id="streaming-diarizeSidecarUrl" placeholder="http://localhost:8786" />
           </label>
           <label class="checkbox-label">
             <input type="checkbox" id="streaming-diarizeOnEnd" />

@@ -11,7 +11,7 @@ export function loadConfig(env) {
   return {
     port: parseInt(env.PORT || "8787", 10),
     scribeMode,
-    defaultNoteStyle: env.DEFAULT_NOTE_STYLE || "soap",
+    defaultNoteStyle: env.DEFAULT_NOTE_STYLE || "journal",
     defaultSpecialty: env.DEFAULT_SPECIALTY || "primary-care",
     defaultCountry: env.DEFAULT_COUNTRY || "",
     enableWebUi: String(env.ENABLE_WEB_UI || "true").toLowerCase() !== "false",
@@ -65,9 +65,12 @@ export function loadConfig(env) {
       timeoutMs: parseInt(env.CLI_TIMEOUT_MS || "120000", 10),
     },
     streaming: {
-      transcriptionProvider: env.STREAMING_TRANSCRIPTION_PROVIDER || "mock-stream",
+      transcriptionProvider: env.STREAMING_TRANSCRIPTION_PROVIDER || defaultStreamingProvider(env.TRANSCRIPTION_PROVIDER),
       diarizeSidecarUrl: env.DIARIZE_SIDECAR_URL || "http://localhost:8786",
       diarizeOnEnd: String(env.DIARIZE_ON_END || "false").toLowerCase() === "true",
+      whisperModel: env.STREAMING_WHISPER_MODEL || "onnx-community/kb-whisper-large-ONNX",
+      whisperLanguage: env.STREAMING_WHISPER_LANGUAGE || "sv",
+      whisperIntervalMs: parseInt(env.STREAMING_WHISPER_INTERVAL_MS || "5000", 10),
     },
   };
 }
@@ -76,6 +79,11 @@ function defaultTranscriptionProvider(mode) {
   if (mode === "api") return "openai";
   if (mode === "local") return "whisper.cpp";
   return "mock";
+}
+
+function defaultStreamingProvider(txProvider) {
+  if (txProvider === "whisper-onnx") return "whisper-stream";
+  return "mock-stream";
 }
 
 function defaultNoteProvider(mode) {

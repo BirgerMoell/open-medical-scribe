@@ -21,7 +21,8 @@ const NESTED_FIELDS = [
   "google-speechApiKey", "google-speechModel",
   "berget-apiKey", "berget-baseUrl", "berget-transcribeModel",
   "ollama-baseUrl", "ollama-model",
-  "streaming-transcriptionProvider", "streaming-diarizeSidecarUrl",
+  "streaming-transcriptionProvider", "streaming-whisperModel", "streaming-whisperLanguage",
+  "streaming-diarizeSidecarUrl",
 ];
 
 async function loadSettings() {
