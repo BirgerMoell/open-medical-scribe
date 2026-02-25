@@ -502,6 +502,143 @@
       color: var(--text-primary);
     }
 
+    /* ---- STREAMING PIPELINE ---- */
+    .stream-pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 8px;
+    }
+
+    .stream-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      position: relative;
+      padding-bottom: 28px;
+    }
+
+    .stream-step:last-child {
+      padding-bottom: 0;
+    }
+
+    .stream-step-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(88, 166, 255, 0.12);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stream-step:not(:last-child) .stream-step-num::after {
+      content: "";
+      position: absolute;
+      top: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: calc(100% + 28px - 36px);
+      background: var(--border);
+    }
+
+    .stream-step-content {
+      flex: 1;
+      padding-top: 4px;
+    }
+
+    .stream-step-content h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stream-step-content p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .stream-step-content code {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    /* ---- CONFIG TABLE ---- */
+    .config-group {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .config-table-wrap {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .config-table-wrap h3 {
+      padding: 16px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .config-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .config-table th,
+    .config-table td {
+      text-align: left;
+      padding: 10px 20px;
+      font-size: 0.88rem;
+    }
+
+    .config-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .config-table td {
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .config-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .config-table .var-name {
+      color: var(--accent-green);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .config-table .var-default {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
     /* ---- RESPONSIVE ---- */
     @media (max-width: 900px) {
       .features-grid {
@@ -528,6 +665,11 @@
 
       .arch-step {
         max-width: 300px;
+      }
+
+      .config-table th:nth-child(3),
+      .config-table td:nth-child(3) {
+        display: none;
       }
     }
 
@@ -583,6 +725,10 @@
         <li><a href="#getting-started">Get Started</a></li>
         <li><a href="#downloads">Downloads</a></li>
         <li><a href="#providers">Providers</a></li>
+        <li><a href="#note-formats">Formats</a></li>
+        <li><a href="#streaming">Streaming</a></li>
+        <li><a href="#cli">CLI</a></li>
+        <li><a href="#configuration">Config</a></li>
         <li><a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a></li>
       </ul>
     </div>
@@ -911,6 +1057,447 @@
     <div class="safety-banner">
       <h3>Important Safety Note</h3>
       <p>Open Medical Scribe is an assistive documentation tool, not a diagnostic system. All generated notes are drafts that require clinical review and sign-off before use in patient care. Always verify the content against your own clinical judgment.</p>
+    </div>
+  </section>
+
+  <!-- Note Formats -->
+  <section id="note-formats">
+    <p class="section-label">Note Formats</p>
+    <h2 class="section-title">Structured clinical note styles</h2>
+    <p class="section-desc">Choose the documentation format that fits your clinical workflow. Each style generates structured JSON with typed section keys, coding hints, and follow-up questions.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon icon-blue">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3>SOAP</h3>
+        <p>The standard four-section format: <strong>Subjective</strong> (patient-reported symptoms and history), <strong>Objective</strong> (clinician observations and vitals), <strong>Assessment</strong> (diagnosis and clinical reasoning), and <strong>Plan</strong> (treatment, follow-up, referrals). Widely used in primary care and general practice.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3>History &amp; Physical</h3>
+        <p>Comprehensive intake documentation with sections for <strong>Chief Complaint</strong>, <strong>History of Present Illness</strong>, <strong>Past Medical History</strong>, <strong>Medications</strong>, <strong>Allergies</strong>, <strong>Family History</strong>, <strong>Social History</strong>, <strong>Review of Systems</strong>, <strong>Physical Examination</strong>, <strong>Assessment</strong>, and <strong>Plan</strong>. Ideal for new patient encounters and hospital admissions.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-green">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3>Progress Note</h3>
+        <p>Follow-up visit documentation structured as <strong>Interval History</strong> (changes since last visit), <strong>Current Medications</strong>, <strong>Examination Findings</strong>, <strong>Assessment</strong>, and <strong>Plan</strong>. Designed for ongoing care where a full H&amp;P is not required.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-orange">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3>DAP (Behavioral Health)</h3>
+        <p>A three-section format for mental health and counseling sessions: <strong>Data</strong> (objective and subjective information from the session), <strong>Assessment</strong> (clinical interpretation and progress toward therapeutic goals), and <strong>Plan</strong> (next steps, homework assignments, next session agenda).</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-blue">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3>Procedure Note</h3>
+        <p>Structured documentation for clinical procedures with sections for <strong>Procedure Name</strong>, <strong>Indication</strong>, <strong>Pre-procedure Diagnosis</strong>, <strong>Anesthesia</strong>, <strong>Description of Procedure</strong>, <strong>Findings</strong>, <strong>Specimens</strong>, <strong>Complications</strong>, <strong>Post-procedure Condition</strong>, and <strong>Plan</strong>.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3>Swedish Journal / Journalanteckning</h3>
+        <p>Documentation following Swedish clinical standards and Patientdatalagen (PDL). Sections: <strong>Aktuellt</strong> (presenting concern in the patient's own words), <strong>Anamnes</strong> (medical history, heredity, current symptoms), <strong>Status</strong> (physical examination and clinical findings), <strong>Bed&ouml;mning</strong> (clinical assessment and diagnosis with ICD-10 codes), and <strong>Planering</strong> (treatment plan, prescriptions, referrals, follow-up). Written in Swedish using standard medical abbreviations (AT, BT, Cor, Pulm, Buk).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Streaming -->
+  <section id="streaming">
+    <p class="section-label">Streaming</p>
+    <h2 class="section-title">Real-time transcription pipeline</h2>
+    <p class="section-desc">Audio flows from the browser microphone through a WebSocket connection to the server, where Whisper ONNX processes it locally and streams interim results back in real time.</p>
+
+    <div class="arch-flow">
+      <div class="stream-pipeline">
+        <div class="stream-step">
+          <div class="stream-step-num">1</div>
+          <div class="stream-step-content">
+            <h4>Audio capture via AudioWorklet</h4>
+            <p>The browser captures microphone audio using the Web Audio API's AudioWorklet interface. Audio is downsampled to <code>16 kHz mono</code> and encoded as <code>PCM16</code> (signed 16-bit little-endian) before being sent as binary WebSocket frames to the server at <code>ws://host/v1/stream</code>.</p>
+          </div>
+        </div>
+
+        <div class="stream-step">
+          <div class="stream-step-num">2</div>
+          <div class="stream-step-content">
+            <h4>WebSocket session initialization</h4>
+            <p>On connection, the client sends a JSON configuration message specifying language and diarization preferences. The server creates a streaming transcription session with the configured provider and responds with a <code>ready</code> message. All subsequent binary frames are routed to the session's audio buffer.</p>
+          </div>
+        </div>
+
+        <div class="stream-step">
+          <div class="stream-step-num">3</div>
+          <div class="stream-step-content">
+            <h4>Buffered Whisper inference</h4>
+            <p>The server accumulates incoming PCM16 audio into a buffer. At a configurable interval (default <code>5 seconds</code>, set via <code>STREAMING_WHISPER_INTERVAL_MS</code>), the buffer is converted to Float32 and fed to the Whisper ONNX model via <code>@huggingface/transformers</code>. Segments shorter than 0.5 seconds are skipped. An RMS-based silence check prevents hallucinated transcriptions on quiet audio.</p>
+          </div>
+        </div>
+
+        <div class="stream-step">
+          <div class="stream-step-num">4</div>
+          <div class="stream-step-content">
+            <h4>Interim results stream to the UI</h4>
+            <p>Each inference cycle sends a <code>transcript</code> message back over the WebSocket containing the current text, speaker ID, and finality flag. The browser UI displays these interim results live, updating in place until the segment is finalized. Non-final results are shown as in-progress text so the clinician sees transcription happening in real time.</p>
+          </div>
+        </div>
+
+        <div class="stream-step">
+          <div class="stream-step-num">5</div>
+          <div class="stream-step-content">
+            <h4>Silence detection finalizes segments</h4>
+            <p>When the RMS energy of incoming audio drops below the silence threshold for <code>1.5 seconds</code>, the current segment is marked as final. The server sends an <code>utterance_end</code> message, commits the text to the transcript, and advances the buffer pointer. This creates natural sentence boundaries without requiring the clinician to press any buttons.</p>
+          </div>
+        </div>
+
+        <div class="stream-step">
+          <div class="stream-step-num">6</div>
+          <div class="stream-step-content">
+            <h4>Session end and note generation</h4>
+            <p>When the clinician stops recording (or the WebSocket closes), the server performs a final transcription pass on any remaining buffered audio. A <code>session_end</code> message is sent containing the full assembled transcript, speaker information, utterance count, and audio duration. The transcript is then passed to the configured note generation provider to produce a structured clinical note. Optional post-session diarization via a pyannote sidecar can refine speaker attribution.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Tools -->
+  <section id="cli">
+    <p class="section-label">CLI Tools</p>
+    <h2 class="section-title">Command-line interface</h2>
+    <p class="section-desc">Two standalone CLI tools for scripting, batch processing, and integration into existing workflows. Pipe them together or use independently.</p>
+
+    <div class="features-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 32px;">
+      <div class="feature-card">
+        <div class="feature-icon icon-green">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </div>
+        <h3>scribe-transcribe</h3>
+        <p>Transcribes audio files to text. Accepts an audio file path as an argument, or reads from stdin. Outputs plain text to stdout.</p>
+        <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+          <strong style="color: var(--text-primary);">Flags:</strong>
+          <code>--provider</code> (transcription backend),
+          <code>--language</code> (language hint, e.g. "sv"),
+          <code>--country</code> (country code, e.g. "SE"),
+          <code>--locale</code> (full locale, e.g. "sv-SE"),
+          <code>--mime-type</code> (audio MIME type, auto-detected from extension),
+          <code>--model</code> (override provider model)
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon icon-purple">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </div>
+        <h3>scribe-note</h3>
+        <p>Generates a structured clinical note from a transcript. Reads transcript text from stdin, <code>--transcript</code>, or <code>--transcript-file</code>. Outputs JSON to stdout with <code>noteText</code>, <code>sections</code>, <code>codingHints</code>, <code>followUpQuestions</code>, and <code>warnings</code>.</p>
+        <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+          <strong style="color: var(--text-primary);">Flags:</strong>
+          <code>--provider</code> (note backend),
+          <code>--note-style</code> (soap, hp, progress, dap, procedure, journal),
+          <code>--specialty</code> (medical specialty),
+          <code>--custom-prompt</code> (override system prompt),
+          <code>--model</code> (override provider model)
+        </p>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 16px; font-size: 1.15rem;">Pipeline example</h3>
+    <div class="code-block">
+      <span class="comment"># Transcribe an audio file and generate a SOAP note in one pipeline</span><br>
+      <span class="cmd">scribe-transcribe recording.mp3 | scribe-note --note-style soap</span><br>
+      <br>
+      <span class="comment"># Use a specific provider and specialty</span><br>
+      <span class="cmd">scribe-transcribe --provider openai --language en consultation.wav \</span><br>
+      <span class="cmd">&nbsp;&nbsp;| scribe-note --provider anthropic --note-style hp --specialty cardiology</span><br>
+      <br>
+      <span class="comment"># Generate a Swedish journal note from a transcript file</span><br>
+      <span class="cmd">scribe-note --transcript-file transcript.txt --note-style journal</span>
+    </div>
+
+    <h3 style="margin-top: 32px; margin-bottom: 16px; font-size: 1.15rem;">Building the CLI binaries</h3>
+    <div class="code-block">
+      <span class="comment"># Build both CLI tools as standalone Bun executables</span><br>
+      <span class="cmd">npm run build:cli</span><br>
+      <br>
+      <span class="comment"># Or build individually</span><br>
+      <span class="cmd">npm run build:cli:transcribe</span><br>
+      <span class="cmd">npm run build:cli:note</span><br>
+      <br>
+      <span class="comment"># Compiled binaries are output to dist/scribe-transcribe and dist/scribe-note</span>
+    </div>
+    <p class="getting-started-note">
+      CLI tools are compiled with <a href="https://bun.sh">Bun</a> into self-contained executables. They share the same provider and configuration logic as the web server, reading settings from environment variables or <code>.env</code>.
+    </p>
+  </section>
+
+  <!-- Configuration -->
+  <section id="configuration">
+    <p class="section-label">Configuration</p>
+    <h2 class="section-title">Environment variables</h2>
+    <p class="section-desc">Configure the server, CLI tools, and desktop app using environment variables. Set them in a <code>.env</code> file at the project root, or export them in your shell. The desktop app also provides a graphical Settings page.</p>
+
+    <div class="config-group">
+      <div class="config-table-wrap">
+        <h3>General</h3>
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="var-name">SCRIBE_MODE</td>
+              <td>Operating mode: <code>api</code> (cloud providers), <code>local</code> (Ollama + whisper.cpp), or <code>hybrid</code> (mix both)</td>
+              <td class="var-default">hybrid</td>
+            </tr>
+            <tr>
+              <td class="var-name">PORT</td>
+              <td>HTTP server listen port</td>
+              <td class="var-default">8787</td>
+            </tr>
+            <tr>
+              <td class="var-name">TRANSCRIPTION_PROVIDER</td>
+              <td>Transcription backend: <code>whisper-onnx</code>, <code>whisper.cpp</code>, <code>faster-whisper</code>, <code>openai</code>, <code>deepgram</code>, <code>google</code>, <code>berget</code></td>
+              <td class="var-default">depends on mode</td>
+            </tr>
+            <tr>
+              <td class="var-name">NOTE_PROVIDER</td>
+              <td>Note generation backend: <code>ollama</code>, <code>openai</code>, <code>anthropic</code>, <code>gemini</code></td>
+              <td class="var-default">depends on mode</td>
+            </tr>
+            <tr>
+              <td class="var-name">DEFAULT_NOTE_STYLE</td>
+              <td>Default note format: <code>soap</code>, <code>hp</code>, <code>progress</code>, <code>dap</code>, <code>procedure</code>, <code>journal</code></td>
+              <td class="var-default">journal</td>
+            </tr>
+            <tr>
+              <td class="var-name">DEFAULT_SPECIALTY</td>
+              <td>Default medical specialty context (e.g. <code>primary-care</code>, <code>cardiology</code>, <code>psychiatry</code>)</td>
+              <td class="var-default">primary-care</td>
+            </tr>
+            <tr>
+              <td class="var-name">DEFAULT_COUNTRY</td>
+              <td>Default country code for locale-aware behavior (e.g. <code>SE</code>, <code>US</code>)</td>
+              <td class="var-default">(empty)</td>
+            </tr>
+            <tr>
+              <td class="var-name">ENABLE_WEB_UI</td>
+              <td>Enable the browser-based UI (set <code>false</code> for API-only mode)</td>
+              <td class="var-default">true</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="config-table-wrap">
+        <h3>Privacy</h3>
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="var-name">PHI_REDACTION_MODE</td>
+              <td>Protected Health Information redaction strategy: <code>basic</code> (regex patterns) or <code>none</code></td>
+              <td class="var-default">basic</td>
+            </tr>
+            <tr>
+              <td class="var-name">REDACT_BEFORE_API_CALLS</td>
+              <td>Apply PHI redaction before sending data to cloud providers</td>
+              <td class="var-default">true</td>
+            </tr>
+            <tr>
+              <td class="var-name">AUDIT_LOG_FILE</td>
+              <td>Path to an audit log file for tracking usage events</td>
+              <td class="var-default">(disabled)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="config-table-wrap">
+        <h3>Provider API Keys and Models</h3>
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="var-name">OPENAI_API_KEY</td>
+              <td>OpenAI API key for transcription and note generation</td>
+              <td class="var-default">(required if using OpenAI)</td>
+            </tr>
+            <tr>
+              <td class="var-name">OPENAI_NOTE_MODEL</td>
+              <td>OpenAI model for note generation</td>
+              <td class="var-default">gpt-4.1-mini</td>
+            </tr>
+            <tr>
+              <td class="var-name">OPENAI_TRANSCRIBE_MODEL</td>
+              <td>OpenAI model for transcription</td>
+              <td class="var-default">gpt-4o-mini-transcribe</td>
+            </tr>
+            <tr>
+              <td class="var-name">ANTHROPIC_API_KEY</td>
+              <td>Anthropic API key for Claude-based note generation</td>
+              <td class="var-default">(required if using Anthropic)</td>
+            </tr>
+            <tr>
+              <td class="var-name">ANTHROPIC_MODEL</td>
+              <td>Anthropic Claude model</td>
+              <td class="var-default">claude-sonnet-4-20250514</td>
+            </tr>
+            <tr>
+              <td class="var-name">GEMINI_API_KEY</td>
+              <td>Google Gemini API key for note generation</td>
+              <td class="var-default">(required if using Gemini)</td>
+            </tr>
+            <tr>
+              <td class="var-name">GEMINI_MODEL</td>
+              <td>Gemini model</td>
+              <td class="var-default">gemini-2.0-flash</td>
+            </tr>
+            <tr>
+              <td class="var-name">OLLAMA_BASE_URL</td>
+              <td>Ollama server URL for local note generation</td>
+              <td class="var-default">http://localhost:11434</td>
+            </tr>
+            <tr>
+              <td class="var-name">OLLAMA_MODEL</td>
+              <td>Ollama model for note generation</td>
+              <td class="var-default">llama3.1:8b</td>
+            </tr>
+            <tr>
+              <td class="var-name">DEEPGRAM_API_KEY</td>
+              <td>Deepgram API key for cloud transcription</td>
+              <td class="var-default">(required if using Deepgram)</td>
+            </tr>
+            <tr>
+              <td class="var-name">DEEPGRAM_MODEL</td>
+              <td>Deepgram transcription model</td>
+              <td class="var-default">nova-3-medical</td>
+            </tr>
+            <tr>
+              <td class="var-name">BERGET_API_KEY</td>
+              <td>Berget AI API key for EU-sovereign transcription</td>
+              <td class="var-default">(required if using Berget)</td>
+            </tr>
+            <tr>
+              <td class="var-name">BERGET_TRANSCRIBE_MODEL</td>
+              <td>Berget AI transcription model</td>
+              <td class="var-default">KBLab/kb-whisper-large</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="config-table-wrap">
+        <h3>Streaming (Live Transcription)</h3>
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="var-name">STREAMING_TRANSCRIPTION_PROVIDER</td>
+              <td>Streaming transcription backend: <code>whisper-stream</code>, <code>deepgram-stream</code>, or <code>mock-stream</code></td>
+              <td class="var-default">mock-stream</td>
+            </tr>
+            <tr>
+              <td class="var-name">STREAMING_WHISPER_MODEL</td>
+              <td>ONNX Whisper model for streaming transcription</td>
+              <td class="var-default">onnx-community/kb-whisper-large-ONNX</td>
+            </tr>
+            <tr>
+              <td class="var-name">STREAMING_WHISPER_LANGUAGE</td>
+              <td>Language code for streaming Whisper inference</td>
+              <td class="var-default">sv</td>
+            </tr>
+            <tr>
+              <td class="var-name">STREAMING_WHISPER_INTERVAL_MS</td>
+              <td>Milliseconds between Whisper inference cycles during streaming</td>
+              <td class="var-default">5000</td>
+            </tr>
+            <tr>
+              <td class="var-name">DIARIZE_SIDECAR_URL</td>
+              <td>URL of the pyannote diarization sidecar service</td>
+              <td class="var-default">http://localhost:8786</td>
+            </tr>
+            <tr>
+              <td class="var-name">DIARIZE_ON_END</td>
+              <td>Run speaker diarization after session ends</td>
+              <td class="var-default">false</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
