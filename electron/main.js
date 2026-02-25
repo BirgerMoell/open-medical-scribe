@@ -4,11 +4,13 @@ import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import http from "node:http";
+import { hasBundledLlm, hasBundledWhisper, startLlamaServer, stopLlamaServer } from "./llamaServer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let serverProcess = null;
+let llamaProcess = null;
 let mainWindow = null;
 
 /**
@@ -62,7 +64,7 @@ function waitForServer(port, timeoutMs = 30_000) {
 /**
  * Start the Node.js server (src/index.js) as a forked child process.
  */
-function startServer(port) {
+function startServer(port, extraEnv = {}) {
   // Resolve the path to src/index.js relative to the project root.
   // In development: project root is one level up from electron/
   // In packaged app (asar): project root is the asar base
@@ -77,6 +79,7 @@ function startServer(port) {
     env: {
       ...process.env,
       PORT: String(port),
+      ...extraEnv,
     },
     stdio: ["pipe", "pipe", "pipe", "ipc"],
   });
@@ -145,24 +148,49 @@ app.whenReady().then(async () => {
     const port = await findFreePort();
     console.log(`[electron] Starting server on port ${port}...`);
 
-    startServer(port);
+    const extraEnv = {};
+    const resources = process.resourcesPath;
+
+    // Detect bundled Whisper ONNX model
+    if (hasBundledWhisper(resources)) {
+      const whisperDir = path.join(resources, "models", "whisper");
+      extraEnv.BUNDLED_WHISPER_CACHE_DIR = whisperDir;
+      console.log(`[electron] Bundled Whisper model found at ${whisperDir}`);
+    }
+
+    // Detect and start bundled LLM (llama-server)
+    if (hasBundledLlm(resources)) {
+      console.log("[electron] Bundled LLM found, starting llama-server...");
+      const llama = await startLlamaServer(resources);
+      llamaProcess = llama.process;
+      extraEnv.NOTE_PROVIDER = "openai";
+      extraEnv.OPENAI_BASE_URL = llama.baseUrl;
+      extraEnv.OPENAI_API_KEY = "not-needed";
+      extraEnv.OPENAI_NOTE_MODEL = "local";
+      console.log(`[electron] llama-server ready at ${llama.baseUrl}`);
+    }
+
+    startServer(port, extraEnv);
     await waitForServer(port);
 
     console.log(`[electron] Server is ready at http://127.0.0.1:${port}`);
     createWindow(port);
   } catch (err) {
     console.error("[electron] Failed to start:", err);
+    stopLlamaServer(llamaProcess);
     killServer();
     app.quit();
   }
 });
 
 app.on("window-all-closed", () => {
+  stopLlamaServer(llamaProcess);
   killServer();
   app.quit();
 });
 
 app.on("before-quit", () => {
+  stopLlamaServer(llamaProcess);
   killServer();
 });
 

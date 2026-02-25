@@ -6,7 +6,7 @@
  * Real-time streaming is handled separately by whisperStreamProvider.js.
  */
 import { pipeline } from "@huggingface/transformers";
-import { writeFileSync, unlinkSync, mkdirSync } from "node:fs";
+import { writeFileSync, unlinkSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 
@@ -19,10 +19,16 @@ async function getTranscriber(model) {
   if (cachedPipeline) return cachedPipeline;
   if (pipelinePromise) return pipelinePromise;
 
+  const opts = { dtype: "q4" };
+  const bundledDir = process.env.BUNDLED_WHISPER_CACHE_DIR;
+  if (bundledDir && existsSync(bundledDir)) {
+    opts.cache_dir = bundledDir;
+    opts.local_files_only = true;
+    console.log(`[whisper-onnx] Using bundled model from: ${bundledDir}`);
+  }
+
   console.log(`[whisper-onnx] Loading model: ${model} ...`);
-  pipelinePromise = pipeline("automatic-speech-recognition", model, {
-    dtype: "q4",
-  });
+  pipelinePromise = pipeline("automatic-speech-recognition", model, opts);
   cachedPipeline = await pipelinePromise;
   pipelinePromise = null;
   console.log(`[whisper-onnx] Model loaded.`);

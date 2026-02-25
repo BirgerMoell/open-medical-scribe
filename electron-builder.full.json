@@ -1,0 +1,36 @@
+{
+  "appId": "com.openmedicalscribe.app",
+  "productName": "Open Medical Scribe",
+  "asar": true,
+  "files": [
+    "src/**",
+    "public/**",
+    "electron/**",
+    "node_modules/**",
+    "package.json",
+    "!node_modules/@huggingface/transformers/.cache/**"
+  ],
+  "extraResources": [
+    {
+      "from": "build/extraResources/models",
+      "to": "models",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "build/extraResources/bin",
+      "to": "bin",
+      "filter": ["**/*"]
+    }
+  ],
+  "mac": {
+    "target": "dmg",
+    "category": "public.app-category.medical"
+  },
+  "win": {
+    "target": "nsis"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}

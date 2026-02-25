@@ -6,6 +6,7 @@
  * on the accumulated audio, sending interim results back to the client.
  */
 import { pipeline } from "@huggingface/transformers";
+import { existsSync } from "node:fs";
 
 const DEFAULT_MODEL = "onnx-community/kb-whisper-large-ONNX";
 const DEFAULT_INTERVAL_MS = 3000;
@@ -20,10 +21,16 @@ async function getTranscriber(model) {
   if (cachedPipeline) return cachedPipeline;
   if (pipelinePromise) return pipelinePromise;
 
+  const opts = { dtype: "q4" };
+  const bundledDir = process.env.BUNDLED_WHISPER_CACHE_DIR;
+  if (bundledDir && existsSync(bundledDir)) {
+    opts.cache_dir = bundledDir;
+    opts.local_files_only = true;
+    console.log(`[whisper-stream] Using bundled model from: ${bundledDir}`);
+  }
+
   console.log(`[whisper-stream] Loading model: ${model} ...`);
-  pipelinePromise = pipeline("automatic-speech-recognition", model, {
-    dtype: "q4",
-  });
+  pipelinePromise = pipeline("automatic-speech-recognition", model, opts);
   cachedPipeline = await pipelinePromise;
   pipelinePromise = null;
   console.log(`[whisper-stream] Model loaded.`);
