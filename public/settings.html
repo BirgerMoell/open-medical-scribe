@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings - Open Medical Scribe</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="settings-shell">
+      <header class="settings-header">
+        <a href="/" class="back" aria-label="Back">&larr;</a>
+        <h1>Settings</h1>
+      </header>
+
+      <div id="save-banner" class="save-banner" hidden>
+        <span id="save-msg"></span>
+      </div>
+
+      <section class="settings-grid">
+        <!-- General -->
+        <section class="settings-card">
+          <h2>General</h2>
+
+          <label>
+            Default Country
+            <select id="defaultCountry">
+              <option value="">Auto-detect</option>
+              <option value="SE">Sweden</option>
+              <option value="US">United States</option>
+              <option value="GB">United Kingdom</option>
+              <option value="NO">Norway</option>
+              <option value="DK">Denmark</option>
+              <option value="DE">Germany</option>
+            </select>
+          </label>
+
+          <label>
+            Default Note Style
+            <select id="defaultNoteStyle">
+              <option value="soap">SOAP</option>
+              <option value="hp">History &amp; Physical</option>
+              <option value="progress">Progress Note</option>
+              <option value="dap">DAP (Behavioral Health)</option>
+              <option value="procedure">Procedure Note</option>
+            </select>
+          </label>
+
+          <label>
+            Default Specialty
+            <select id="defaultSpecialty">
+              <option value="general">General</option>
+              <option value="cardiology">Cardiology</option>
+              <option value="orthopedics">Orthopedics</option>
+              <option value="psychiatry">Psychiatry</option>
+              <option value="pediatrics">Pediatrics</option>
+              <option value="emergency">Emergency</option>
+            </select>
+          </label>
+
+          <label>
+            Scribe Mode
+            <select id="scribeMode">
+              <option value="api">API (cloud providers)</option>
+              <option value="local">Local (Ollama / whisper.cpp)</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </label>
+
+          <label>
+            Transcription Provider
+            <select id="transcriptionProvider">
+              <option value="mock">Mock (dev)</option>
+              <option value="openai">OpenAI Whisper</option>
+              <option value="deepgram">Deepgram</option>
+              <option value="google">Google Cloud Speech</option>
+              <option value="berget">Berget AI (EU)</option>
+              <option value="whisper.cpp">whisper.cpp (local)</option>
+              <option value="faster-whisper">faster-whisper (local)</option>
+            </select>
+          </label>
+
+          <label>
+            Note Provider
+            <select id="noteProvider">
+              <option value="mock">Mock (dev)</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="ollama">Ollama (local)</option>
+            </select>
+          </label>
+        </section>
+
+        <!-- Privacy -->
+        <section class="settings-card">
+          <h2>Privacy</h2>
+
+          <label>
+            PHI Redaction Mode
+            <select id="privacy-phiRedactionMode">
+              <option value="regex">Regex patterns</option>
+              <option value="none">None (no redaction)</option>
+            </select>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" id="privacy-redactBeforeApiCalls" />
+            Redact PHI before cloud API calls
+          </label>
+        </section>
+
+        <!-- OpenAI -->
+        <section class="settings-card">
+          <h2>OpenAI</h2>
+          <label>
+            API Key
+            <input type="password" id="openai-apiKey" placeholder="sk-..." autocomplete="off" />
+          </label>
+          <label>
+            Base URL
+            <input type="text" id="openai-baseUrl" placeholder="https://api.openai.com/v1" />
+          </label>
+          <label>
+            Transcription Model
+            <input type="text" id="openai-transcribeModel" placeholder="whisper-1" />
+          </label>
+          <label>
+            Note Model
+            <input type="text" id="openai-noteModel" placeholder="gpt-4o" />
+          </label>
+        </section>
+
+        <!-- Anthropic -->
+        <section class="settings-card">
+          <h2>Anthropic</h2>
+          <label>
+            API Key
+            <input type="password" id="anthropic-apiKey" placeholder="sk-ant-..." autocomplete="off" />
+          </label>
+          <label>
+            Base URL
+            <input type="text" id="anthropic-baseUrl" placeholder="https://api.anthropic.com" />
+          </label>
+          <label>
+            Model
+            <input type="text" id="anthropic-model" placeholder="claude-sonnet-4-20250514" />
+          </label>
+        </section>
+
+        <!-- Gemini -->
+        <section class="settings-card">
+          <h2>Google Gemini</h2>
+          <label>
+            API Key
+            <input type="password" id="gemini-apiKey" placeholder="AIza..." autocomplete="off" />
+          </label>
+          <label>
+            Model
+            <input type="text" id="gemini-model" placeholder="gemini-2.0-flash" />
+          </label>
+        </section>
+
+        <!-- Deepgram -->
+        <section class="settings-card">
+          <h2>Deepgram</h2>
+          <label>
+            API Key
+            <input type="password" id="deepgram-apiKey" placeholder="dg-..." autocomplete="off" />
+          </label>
+          <label>
+            Model
+            <input type="text" id="deepgram-model" placeholder="nova-3-medical" />
+          </label>
+        </section>
+
+        <!-- Google Speech -->
+        <section class="settings-card">
+          <h2>Google Cloud Speech</h2>
+          <label>
+            API Key
+            <input type="password" id="google-speechApiKey" placeholder="AIza..." autocomplete="off" />
+          </label>
+          <label>
+            Model
+            <input type="text" id="google-speechModel" placeholder="latest_long" />
+          </label>
+        </section>
+
+        <!-- Berget AI -->
+        <section class="settings-card">
+          <h2>Berget AI (EU Sovereign)</h2>
+          <label>
+            API Key
+            <input type="password" id="berget-apiKey" placeholder="Bearer token" autocomplete="off" />
+          </label>
+          <label>
+            Base URL
+            <input type="text" id="berget-baseUrl" placeholder="https://api.berget.ai/v1" />
+          </label>
+          <label>
+            Transcription Model
+            <input type="text" id="berget-transcribeModel" placeholder="KBLab/kb-whisper-large" />
+          </label>
+        </section>
+
+        <!-- Ollama -->
+        <section class="settings-card">
+          <h2>Ollama (Local)</h2>
+          <label>
+            Base URL
+            <input type="text" id="ollama-baseUrl" placeholder="http://localhost:11434" />
+          </label>
+          <label>
+            Model
+            <input type="text" id="ollama-model" placeholder="llama3.1:70b" />
+          </label>
+        </section>
+
+        <!-- Streaming -->
+        <section class="settings-card">
+          <h2>Streaming</h2>
+          <label>
+            Streaming Transcription Provider
+            <select id="streaming-transcriptionProvider">
+              <option value="mock-stream">Mock (dev)</option>
+              <option value="deepgram-stream">Deepgram Streaming</option>
+            </select>
+          </label>
+          <label>
+            Diarization Sidecar URL
+            <input type="text" id="streaming-diarizeSidecarUrl" placeholder="http://localhost:8000" />
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="streaming-diarizeOnEnd" />
+            Run diarization on session end
+          </label>
+        </section>
+      </section>
+
+      <section class="settings-actions">
+        <button type="button" id="save-btn">Save Settings</button>
+      </section>
+    </div>
+
+    <script type="module" src="/settings.js"></script>
+  </body>
+</html>

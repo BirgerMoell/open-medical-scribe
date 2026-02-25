@@ -7,129 +7,43 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="bg-grid" aria-hidden="true"></div>
-    <main class="shell">
-      <section class="hero card">
-        <div>
-          <p class="eyebrow">Open Medical Scribe</p>
-          <h1>Simple clinical capture for multilingual transcription and draft notes.</h1>
-          <p class="lede">
-            Choose a country, then record or upload. Swedish is supported via browser speech transcription (`sv-SE`) and backend language hints (`sv`).
-          </p>
+    <a href="/settings" class="gear" aria-label="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </a>
+
+    <main>
+      <p class="brand">Open Medical Scribe</p>
+
+      <div class="recorder">
+        <button type="button" id="record-btn" class="rec" aria-label="Start recording">
+          <span class="rec-icon"></span>
+        </button>
+        <div class="rec-status">
+          <span id="rec-dot" class="dot"></span>
+          <span id="rec-label">Tap to record</span>
         </div>
-        <div id="runtime" class="runtime">Loading runtime config...</div>
+      </div>
+
+      <section id="transcript-section" class="section" hidden>
+        <p class="label">Transcript</p>
+        <div id="transcript" class="transcript"></div>
+        <p id="tx-model" class="model-info"></p>
       </section>
 
-      <section class="workspace">
-        <section class="card composer">
-          <div class="panel-title">
-            <h2>Capture</h2>
-            <p>Only three decisions: country, record, or upload.</p>
-          </div>
-
-          <form id="scribe-form">
-            <label>
-              Country
-              <select name="country">
-                <option value="SE" selected>Sweden</option>
-                <option value="US">United States</option>
-                <option value="GB">United Kingdom</option>
-                <option value="NO">Norway</option>
-                <option value="DK">Denmark</option>
-                <option value="DE">Germany</option>
-              </select>
-            </label>
-
-            <label>
-              Note Style
-              <select name="noteStyle">
-                <option value="soap" selected>SOAP Note</option>
-                <option value="hp">History & Physical (H&P)</option>
-                <option value="progress">Progress Note</option>
-                <option value="dap">DAP (Behavioral Health)</option>
-                <option value="procedure">Procedure Note</option>
-              </select>
-            </label>
-
-            <section class="recorder card-soft" aria-labelledby="recorder-title">
-              <div class="recorder-head">
-                <div>
-                  <h3 id="recorder-title">Record in Browser</h3>
-                  <p>Tap once to start, tap again to stop.</p>
-                </div>
-                <div class="recorder-indicator">
-                  <span id="record-dot" class="record-dot" aria-hidden="true"></span>
-                  <span id="record-state">Ready</span>
-                </div>
-              </div>
-
-              <div class="recorder-controls single-row">
-                <button type="button" id="record-toggle" class="record-btn">Start Recording</button>
-                <span id="record-timer" class="timer" aria-live="polite">00:00</span>
-              </div>
-
-              <label class="upload-pill" for="audio-file">
-                <input id="audio-file" type="file" name="audioFile" accept="audio/*" />
-                <span>Or Upload Audio File</span>
-              </label>
-
-              <div id="record-help" class="recorder-help">
-                Browser recording requires `MediaRecorder` support. `localhost` is a secure context.
-              </div>
-
-              <div class="speech-box">
-                <div class="speech-head">
-                  <span class="speech-label">Transcript</span>
-                  <span id="speech-state" class="speech-state">Unavailable</span>
-                </div>
-                <div id="speech-transcript" class="speech-transcript">
-                  Start recording or upload audio to generate a transcript.
-                </div>
-              </div>
-
-              <audio id="recording-preview" class="recording-preview" controls hidden></audio>
-            </section>
-
-            <div class="actions single-action">
-              <button type="submit" id="generate-btn">Create Draft Note</button>
-            </div>
-          </form>
-        </section>
-
-        <section class="stack">
-          <section class="card">
-            <div class="panel-header">
-              <div class="panel-title tight">
-                <h2>Draft Note</h2>
-                <p>Clinician review required.</p>
-              </div>
-              <span id="status" class="status">Idle</span>
-            </div>
-            <pre id="note" class="note-output">No note yet.</pre>
-            <div id="meta" class="meta"></div>
-          </section>
-
-          <section class="card">
-            <div class="panel-title tight">
-              <h2>Structured Sections</h2>
-              <p>Parsed note segments for quick review.</p>
-            </div>
-            <div id="sections" class="sections"></div>
-            <div id="warnings" class="warnings"></div>
-          </section>
-
-          <section class="card">
-            <div class="panel-title tight">
-              <h2>FHIR Export</h2>
-              <p>Generated automatically after each draft.</p>
-            </div>
-            <pre id="fhir-output" class="note-output compact">No export generated yet.</pre>
-          </section>
-        </section>
+      <section id="note-section" class="section" hidden>
+        <div class="note-head">
+          <p class="label">Draft Note</p>
+          <button type="button" id="copy-btn" class="copy">Copy</button>
+        </div>
+        <p id="note-status" class="note-status"></p>
+        <pre id="note" class="note"></pre>
+        <p id="note-model" class="model-info"></p>
       </section>
     </main>
 
     <script type="module" src="/app.js"></script>
   </body>
 </html>
-

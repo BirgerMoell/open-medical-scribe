@@ -1,6 +1,7 @@
 import { buildSoapNoteFromTranscript } from "./soapFormatter.js";
 import { createAuditLogger } from "./auditLogger.js";
 import { maybeRedactForProvider } from "./privacy.js";
+import { buildNotePrompt } from "./promptBuilder.js";
 
 export function createScribeService({ config, transcriptionProvider, noteGenerator }) {
   const audit = createAuditLogger(config);
@@ -35,11 +36,27 @@ export function createScribeService({ config, transcriptionProvider, noteGenerat
         transcript,
       });
 
+      const notePromptArgs = {
+        transcript: redacted.text,
+        noteStyle: input.customPrompt ? "custom" : noteStyle,
+        specialty,
+        patientContext: input.patientContext || {},
+        clinicianContext: input.clinicianContext || {},
+      };
+
+      // Build the prompt to capture what was sent
+      const prompt = buildNotePrompt(notePromptArgs);
+      // If user provided a custom prompt, override the style instruction
+      if (input.customPrompt) {
+        prompt.system = input.customPrompt;
+      }
+
       const draft = await noteGenerator.generateNote({
         transcript: redacted.text,
         sourceTranscript: transcript,
-        noteStyle,
+        noteStyle: input.customPrompt ? "custom" : noteStyle,
         specialty,
+        customPrompt: input.customPrompt || undefined,
         patientContext: input.patientContext || {},
         clinicianContext: input.clinicianContext || {},
         encounterMetadata: input.encounterMetadata || {},
@@ -62,6 +79,10 @@ export function createScribeService({ config, transcriptionProvider, noteGenerat
         warnings: draft.warnings || [
           "Draft note requires clinician review and sign-off before use.",
         ],
+        prompt: {
+          system: prompt.system,
+          user: prompt.user,
+        },
         meta: {
           noteStyle,
           specialty,

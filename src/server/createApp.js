@@ -5,15 +5,22 @@ import { createTranscriptionProvider } from "../providers/transcription/index.js
 import { serveStaticFile } from "./static.js";
 import { buildFhirDocumentReference } from "../services/fhirExport.js";
 import { parseMultipartFormData } from "../util/multipart.js";
+import { applySavedSettings, saveSettings, configToSettingsResponse } from "../services/settingsStore.js";
 
 export function createApp({ config }) {
-  const transcriptionProvider = createTranscriptionProvider(config);
-  const noteGenerator = createNoteGenerator(config);
-  const scribeService = createScribeService({
+  let transcriptionProvider = createTranscriptionProvider(config);
+  let noteGenerator = createNoteGenerator(config);
+  let scribeService = createScribeService({
     config,
     transcriptionProvider,
     noteGenerator,
   });
+
+  function rebuildProviders() {
+    transcriptionProvider = createTranscriptionProvider(config);
+    noteGenerator = createNoteGenerator(config);
+    scribeService = createScribeService({ config, transcriptionProvider, noteGenerator });
+  }
 
   return {
     async handler(req, res) {
@@ -63,6 +70,19 @@ export function createApp({ config }) {
             },
             noteStyles: ["soap", "hp", "progress", "dap", "procedure"],
           });
+        }
+
+        if (req.method === "GET" && req.url === "/v1/settings") {
+          return jsonResponse(res, 200, configToSettingsResponse(config));
+        }
+
+        if (req.method === "POST" && req.url === "/v1/settings") {
+          const patch = await readJsonBody(req);
+          const merged = saveSettings(patch);
+          applySavedSettings(config);
+          rebuildProviders();
+          console.log(`[settings] Providers rebuilt: tx=${config.transcriptionProvider}, note=${config.noteProvider}`);
+          return jsonResponse(res, 200, configToSettingsResponse(config));
         }
 
         if (req.method === "POST" && req.url === "/v1/encounters/scribe") {
@@ -131,6 +151,18 @@ export function createApp({ config }) {
 
         if (config.enableWebUi && req.method === "GET" && req.url === "/styles.css") {
           if (serveStaticFile(res, "public/styles.css")) return;
+        }
+
+        if (config.enableWebUi && req.method === "GET" && req.url === "/stream.js") {
+          if (serveStaticFile(res, "public/stream.js")) return;
+        }
+
+        if (config.enableWebUi && req.method === "GET" && req.url === "/settings") {
+          if (serveStaticFile(res, "public/settings.html")) return;
+        }
+
+        if (config.enableWebUi && req.method === "GET" && req.url === "/settings.js") {
+          if (serveStaticFile(res, "public/settings.js")) return;
         }
 
         return jsonResponse(res, 404, { error: "Not Found" });

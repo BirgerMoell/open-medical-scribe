@@ -7,7 +7,13 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "build:cli": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js && bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js",
+    "build:cli:transcribe": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js",
+    "build:cli:note": "bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=22"

@@ -4,7 +4,7 @@ import { postJson } from "../shared/http.js";
 export function createAnthropicNoteGenerator(config) {
   return {
     name: "anthropic",
-    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext }) {
+    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext, customPrompt }) {
       if (!config.anthropic.apiKey) {
         return {
           noteText:
@@ -34,7 +34,7 @@ export function createAnthropicNoteGenerator(config) {
           model: config.anthropic.model,
           max_tokens: 4096,
           temperature: 0.2,
-          system: prompt.system,
+          system: customPrompt || prompt.system,
           messages: [{ role: "user", content: prompt.user }],
         },
       });

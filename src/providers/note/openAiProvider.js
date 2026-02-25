@@ -4,7 +4,7 @@ import { postJson } from "../shared/http.js";
 export function createOpenAiNoteGenerator(config) {
   return {
     name: "openai",
-    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext }) {
+    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext, customPrompt }) {
       if (!config.openai.apiKey) {
         return {
           noteText:
@@ -34,7 +34,7 @@ export function createOpenAiNoteGenerator(config) {
           temperature: 0.2,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: prompt.system },
+            { role: "system", content: customPrompt || prompt.system },
             { role: "user", content: prompt.user },
           ],
         },

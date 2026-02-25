@@ -4,7 +4,7 @@ import { postJson } from "../shared/http.js";
 export function createGeminiNoteGenerator(config) {
   return {
     name: "gemini",
-    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext }) {
+    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext, customPrompt }) {
       if (!config.gemini.apiKey) {
         return {
           noteText:
@@ -31,7 +31,7 @@ export function createGeminiNoteGenerator(config) {
         body: {
           contents: [
             {
-              parts: [{ text: `${prompt.system}\n\nUser input:\n${prompt.user}` }],
+              parts: [{ text: `${customPrompt || prompt.system}\n\nUser input:\n${prompt.user}` }],
             },
           ],
           generationConfig: {

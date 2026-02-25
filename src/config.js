@@ -13,6 +13,7 @@ export function loadConfig(env) {
     scribeMode,
     defaultNoteStyle: env.DEFAULT_NOTE_STYLE || "soap",
     defaultSpecialty: env.DEFAULT_SPECIALTY || "primary-care",
+    defaultCountry: env.DEFAULT_COUNTRY || "",
     enableWebUi: String(env.ENABLE_WEB_UI || "true").toLowerCase() !== "false",
     privacy: {
       phiRedactionMode: env.PHI_REDACTION_MODE || "basic",
@@ -57,6 +58,16 @@ export function loadConfig(env) {
       localCommand: env.WHISPER_LOCAL_COMMAND || "",
       timeoutMs: parseInt(env.LOCAL_TRANSCRIBE_TIMEOUT_MS || "120000", 10),
       expects: env.LOCAL_TRANSCRIBE_EXPECTS || "stdin",
+    },
+    cli: {
+      transcribeCommand: env.CLI_TRANSCRIBE_COMMAND || "",
+      noteCommand: env.CLI_NOTE_COMMAND || "",
+      timeoutMs: parseInt(env.CLI_TIMEOUT_MS || "120000", 10),
+    },
+    streaming: {
+      transcriptionProvider: env.STREAMING_TRANSCRIPTION_PROVIDER || "mock-stream",
+      diarizeSidecarUrl: env.DIARIZE_SIDECAR_URL || "http://localhost:8786",
+      diarizeOnEnd: String(env.DIARIZE_ON_END || "false").toLowerCase() === "true",
     },
   };
 }

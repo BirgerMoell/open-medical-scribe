@@ -4,7 +4,7 @@ import { postJson } from "../shared/http.js";
 export function createOllamaNoteGenerator(config) {
   return {
     name: "ollama",
-    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext }) {
+    async generateNote({ transcript, noteStyle, specialty, patientContext, clinicianContext, customPrompt }) {
       const prompt = buildNotePrompt({
         transcript,
         noteStyle,
@@ -13,11 +13,13 @@ export function createOllamaNoteGenerator(config) {
         clinicianContext,
       });
 
+      const systemPrompt = customPrompt || prompt.system;
+
       const { json } = await postJson(`${config.ollama.baseUrl.replace(/\/+$/, "")}/api/generate`, {
         body: {
           model: config.ollama.model,
           stream: false,
-          prompt: `${prompt.system}\n\nUser input:\n${prompt.user}`,
+          prompt: `${systemPrompt}\n\nUser input:\n${prompt.user}`,
           format: "json",
           options: {
             temperature: 0.2,
