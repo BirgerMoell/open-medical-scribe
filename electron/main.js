@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from "electron";
-import { fork } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -62,26 +62,25 @@ function waitForServer(port, timeoutMs = 30_000) {
 }
 
 /**
- * Start the Node.js server (src/index.js) as a forked child process.
+ * Start the Node.js server (src/index.js) as a child process.
+ * Uses the system `node` binary (not Electron's built-in Node) so that
+ * native modules like onnxruntime-node load correctly.
  */
 function startServer(port, extraEnv = {}) {
-  // Resolve the path to src/index.js relative to the project root.
-  // In development: project root is one level up from electron/
-  // In packaged app (asar): project root is the asar base
   const projectRoot = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar")
     : path.resolve(__dirname, "..");
 
   const serverEntry = path.join(projectRoot, "src", "index.js");
 
-  serverProcess = fork(serverEntry, [], {
+  serverProcess = spawn("node", [serverEntry], {
     cwd: projectRoot,
     env: {
       ...process.env,
       PORT: String(port),
       ...extraEnv,
     },
-    stdio: ["pipe", "pipe", "pipe", "ipc"],
+    stdio: ["pipe", "pipe", "pipe"],
   });
 
   serverProcess.stdout?.on("data", (data) => {
