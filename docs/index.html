@@ -912,9 +912,17 @@
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
         </div>
-        <h3>Light Build (~150 MB)</h3>
+        <h3>Light Build (macOS arm64)</h3>
         <p>Clean install with no bundled models. The Whisper ONNX speech recognition model downloads automatically on first use (~1.1 GB). Requires external Ollama for note generation.</p>
         <p style="margin-top: 12px; font-size: 0.85rem; color: var(--accent-green);"><strong>Best for:</strong> users who want a smaller download and have internet access</p>
+        <a href="https://github.com/BirgerMoell/open-medical-scribe/releases/download/v0.1.0/Open-Medical-Scribe-0.1.0-light-macOS-arm64.dmg" class="btn btn-primary" style="margin-top: 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download DMG (~1 GB)
+        </a>
       </div>
 
       <div class="feature-card">
@@ -928,8 +936,22 @@
         <h3>Full Build (~6 GB)</h3>
         <p>Everything bundled for offline use. Includes Whisper ONNX model for local speech recognition and Llama 3.1 8B for local note generation via llama-server. Works completely offline.</p>
         <p style="margin-top: 12px; font-size: 0.85rem; color: var(--accent-purple);"><strong>Best for:</strong> air-gapped environments, offline clinics, maximum privacy</p>
+        <a href="https://github.com/BirgerMoell/open-medical-scribe/releases/download/v0.1.0/Open-Medical-Scribe-0.1.0-full-macOS-arm64.dmg" class="btn btn-primary" style="margin-top: 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download DMG (~1.9 GB)
+        </a>
       </div>
     </div>
+
+    <p style="margin-top: 24px; color: var(--text-secondary); font-size: 0.9rem;">
+      The full build includes the bundled Whisper ONNX model for instant local transcription. Both builds require <a href="https://ollama.com">Ollama</a> for note generation.
+      Additional platforms (macOS x64, Windows) will be available in future releases.
+      See <a href="https://github.com/BirgerMoell/open-medical-scribe/releases">all releases</a>.
+    </p>
   </section>
 
   <!-- Getting Started -->
