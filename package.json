@@ -7,6 +7,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "node src/index.js",
+    "start:berget-cloud": "node scripts/start-berget-cloud.js",
     "dev": "node --watch src/index.js",
     "test": "node --test",
     "build:cli": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js && bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js",
@@ -33,7 +34,7 @@
   },
   "build": {
     "appId": "com.openmedicalscribe.app",
-    "productName": "Open Medical Scribe",
+    "productName": "Eir Scribe",
     "asar": true,
     "files": [
       "src",

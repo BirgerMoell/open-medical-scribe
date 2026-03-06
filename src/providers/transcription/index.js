@@ -5,7 +5,6 @@ import { createDeepgramTranscriptionProvider } from "./deepgramProvider.js";
 import { createGoogleSpeechTranscriptionProvider } from "./googleSpeechProvider.js";
 import { createBergetTranscriptionProvider } from "./bergetProvider.js";
 import { createCliTranscriptionProvider } from "./cliProvider.js";
-import { createWhisperOnnxTranscriptionProvider } from "./whisperOnnxProvider.js";
 
 export function createTranscriptionProvider(config) {
   const provider = config.transcriptionProvider;
@@ -19,7 +18,29 @@ export function createTranscriptionProvider(config) {
   if (provider === "google") return createGoogleSpeechTranscriptionProvider(config);
   if (provider === "berget") return createBergetTranscriptionProvider(config);
   if (provider === "cli") return createCliTranscriptionProvider(config);
-  if (provider === "whisper-onnx") return createWhisperOnnxTranscriptionProvider(config);
+  if (provider === "whisper-onnx") {
+    return createLazyTranscriptionProvider("whisper-onnx", async () => {
+      const mod = await import("./whisperOnnxProvider.js");
+      return mod.createWhisperOnnxTranscriptionProvider(config);
+    });
+  }
 
   throw new Error(`Unsupported transcription provider: ${provider}`);
+}
+
+function createLazyTranscriptionProvider(name, load) {
+  let providerPromise = null;
+
+  async function getProvider() {
+    if (!providerPromise) providerPromise = load();
+    return providerPromise;
+  }
+
+  return {
+    name,
+    async transcribe(input) {
+      const provider = await getProvider();
+      return provider.transcribe(input);
+    },
+  };
 }

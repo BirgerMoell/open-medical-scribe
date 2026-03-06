@@ -6,9 +6,8 @@
  * Real-time streaming is handled separately by whisperStreamProvider.js.
  */
 import { pipeline } from "@huggingface/transformers";
-import { writeFileSync, unlinkSync, mkdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
-import { randomBytes } from "node:crypto";
+import { transcriptFromPlainText } from "./resultAdapter.js";
+import { decodeAudioToFloat32 } from "../../util/wav.js";
 
 const DEFAULT_MODEL = "onnx-community/kb-whisper-large-ONNX";
 
@@ -45,43 +44,25 @@ export function createWhisperOnnxTranscriptionProvider(config) {
     async transcribe({ type, content, mimeType, language: reqLang }) {
       // Pass through simulated text
       if (type === "text-simulated-audio") {
-        return { text: content };
+        return transcriptFromPlainText(content, { language: reqLang || language });
       }
 
       if (type !== "audio-base64" || !content) {
-        return { text: "[whisper-onnx] No audio data received." };
+        return transcriptFromPlainText("[whisper-onnx] No audio data received.");
       }
 
       const transcriber = await getTranscriber(model);
-
-      // Decode base64 audio to a temp file — transformers.js can read audio files
       const audioBytes = Buffer.from(content, "base64");
-      const ext = mimeToExt(mimeType);
-      const tmpDir = join("data", "tmp");
-      mkdirSync(tmpDir, { recursive: true });
-      const tmpFile = join(tmpDir, `audio-${randomBytes(8).toString("hex")}.${ext}`);
-
-      try {
-        writeFileSync(tmpFile, audioBytes);
-        const lang = reqLang || language;
-        const result = await transcriber(tmpFile, {
-          language: lang,
-          task: "transcribe",
-        });
-        return { text: (result.text || "").trim() };
-      } finally {
-        try { unlinkSync(tmpFile); } catch { /* ignore */ }
-      }
+      const lang = reqLang || language;
+      const audio = await decodeAudioToFloat32(audioBytes, 16000);
+      const result = await transcriber(audio, {
+        language: lang,
+        task: "transcribe",
+      });
+      return transcriptFromPlainText((result.text || "").trim(), {
+        language: lang,
+        durationSec: result.duration,
+      });
     },
   };
-}
-
-function mimeToExt(mime) {
-  const s = String(mime || "").toLowerCase();
-  if (s.includes("mp3") || s.includes("mpeg")) return "mp3";
-  if (s.includes("mp4") || s.includes("m4a")) return "m4a";
-  if (s.includes("ogg")) return "ogg";
-  if (s.includes("flac")) return "flac";
-  if (s.includes("webm")) return "webm";
-  return "wav";
 }

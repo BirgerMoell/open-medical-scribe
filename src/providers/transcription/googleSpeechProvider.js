@@ -1,19 +1,21 @@
+import { mapSegmentList, mapWordList, safeJson, transcriptFromPlainText } from "./resultAdapter.js";
+
 export function createGoogleSpeechTranscriptionProvider(config) {
   return {
     name: "google",
     async transcribe(input) {
       if (input.type === "text-simulated-audio") {
-        return { text: input.content };
+        return transcriptFromPlainText(input.content, { language: input.language });
       }
 
       if (!config.google.speechApiKey) {
-        return {
-          text: "[google speech provider not configured] Set GOOGLE_SPEECH_API_KEY to enable Google Cloud Speech transcription.",
-        };
+        return transcriptFromPlainText(
+          "[google speech provider not configured] Set GOOGLE_SPEECH_API_KEY to enable Google Cloud Speech transcription.",
+        );
       }
 
       if (input.type !== "audio-base64") {
-        return { text: "" };
+        return transcriptFromPlainText("");
       }
 
       const mimeType = input.mimeType || "audio/wav";
@@ -35,6 +37,7 @@ export function createGoogleSpeechTranscriptionProvider(config) {
               languageCode: language,
               model: config.google.speechModel,
               enableAutomaticPunctuation: true,
+              enableWordTimeOffsets: true,
             },
             audio: {
               content: input.content,
@@ -53,12 +56,30 @@ export function createGoogleSpeechTranscriptionProvider(config) {
         }
 
         const json = safeJson(text);
-        const transcript = (json?.results || [])
-          .map((r) => r.alternatives?.[0]?.transcript || "")
+        const results = json?.results || [];
+        const transcript = results
+          .map((result) => result.alternatives?.[0]?.transcript || "")
           .join(" ")
           .trim();
 
-        return { text: transcript };
+        return transcriptFromPlainText(transcript, {
+          language: input.language,
+          words: mapWordList(results.flatMap((result) => result.alternatives?.[0]?.words || []), (word) => ({
+            text: word?.word,
+            start: word?.startTime,
+            end: word?.endTime,
+            confidence: word?.confidence,
+          })),
+          segments: mapSegmentList(results, (result) => {
+            const alternative = result?.alternatives?.[0];
+            const wordList = alternative?.words || [];
+            return {
+              text: alternative?.transcript,
+              start: wordList[0]?.startTime,
+              end: wordList[wordList.length - 1]?.endTime,
+            };
+          }),
+        });
       } finally {
         clearTimeout(timeout);
       }
@@ -74,12 +95,4 @@ function encodingFromMime(mimeType) {
   if (mime.includes("webm")) return "WEBM_OPUS";
   if (mime.includes("mp3") || mime.includes("mpeg")) return "MP3";
   return "ENCODING_UNSPECIFIED";
-}
-
-function safeJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
 }

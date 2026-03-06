@@ -2,6 +2,7 @@ import { createMockNoteGenerator } from "./mockProvider.js";
 import { createOllamaNoteGenerator } from "./ollamaProvider.js";
 import { createOpenAiNoteGenerator } from "./openAiProvider.js";
 import { createAnthropicNoteGenerator } from "./anthropicProvider.js";
+import { createBergetNoteGenerator } from "./bergetProvider.js";
 import { createGeminiNoteGenerator } from "./geminiProvider.js";
 import { createCliNoteGenerator } from "./cliProvider.js";
 
@@ -10,6 +11,7 @@ export function createNoteGenerator(config) {
 
   if (provider === "mock") return createMockNoteGenerator();
   if (provider === "openai") return createOpenAiNoteGenerator(config);
+  if (provider === "berget") return createBergetNoteGenerator(config);
   if (provider === "ollama") return createOllamaNoteGenerator(config);
   if (provider === "anthropic") return createAnthropicNoteGenerator(config);
   if (provider === "gemini") return createGeminiNoteGenerator(config);

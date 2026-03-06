@@ -1,22 +1,23 @@
 import { runCliCommand } from "../shared/cli.js";
+import { transcriptFromPlainText } from "./resultAdapter.js";
 
 export function createCliTranscriptionProvider(config) {
   return {
     name: "cli",
     async transcribe(input) {
       if (input.type === "text-simulated-audio") {
-        return { text: input.content };
+        return transcriptFromPlainText(input.content, { language: input.language });
       }
 
       const command = config.cli?.transcribeCommand;
       if (!command) {
-        return {
-          text: "[cli transcription provider not configured] Set CLI_TRANSCRIBE_COMMAND to enable CLI-based transcription.",
-        };
+        return transcriptFromPlainText(
+          "[cli transcription provider not configured] Set CLI_TRANSCRIBE_COMMAND to enable CLI-based transcription.",
+        );
       }
 
       if (input.type !== "audio-base64") {
-        return { text: "" };
+        return transcriptFromPlainText("");
       }
 
       const audioBytes = Buffer.from(input.content, "base64");
@@ -33,7 +34,7 @@ export function createCliTranscriptionProvider(config) {
         timeoutMs: config.cli?.timeoutMs || 120000,
       });
 
-      return { text };
+      return transcriptFromPlainText(text, { language: input.language });
     },
   };
 }

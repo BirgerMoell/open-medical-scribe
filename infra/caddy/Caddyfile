@@ -1,0 +1,16 @@
+api.example.se {
+    encode zstd gzip
+
+    request_body {
+        max_size 64MB
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Permissions-Policy "microphone=()"
+    }
+
+    reverse_proxy 127.0.0.1:8787
+}

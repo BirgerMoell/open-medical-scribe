@@ -12,7 +12,7 @@ Options:
   --provider <name>         Note provider (default: $NOTE_PROVIDER)
   --transcript <text>       Transcript text (alternative to stdin)
   --transcript-file <path>  Read transcript from file
-  --note-style <style>      soap, hp, progress, dap, procedure (default: "soap")
+  --note-style <style>      soap, hp, progress, dap, procedure, journal (default: "soap")
   --specialty <name>        Medical specialty (default: "primary-care")
   --custom-prompt <text>    Override the system prompt
   --model <name>            Override the provider model

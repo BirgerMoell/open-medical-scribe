@@ -15,6 +15,8 @@ function baseConfig(overrides = {}) {
   return {
     port: 0,
     scribeMode: "local",
+    auth: { bearerToken: "" },
+    http: { maxRequestBytes: 64 * 1024 * 1024 },
     defaultNoteStyle: "soap",
     defaultSpecialty: "primary-care",
     defaultCountry: "SE",
@@ -312,6 +314,7 @@ test("upload endpoint accepts real MP3 audio and returns mock transcript", async
   assert.equal(res.json.provider, "mock");
   assert.equal(typeof res.json.transcript, "string");
   assert.ok(res.json.transcript.length > 0, "transcript should be non-empty");
+  assert.equal(res.json.transcriptDocument.text, res.json.transcript);
 });
 
 // ─── Full scribe flow: transcript ➜ note (mock providers) ──────────────
@@ -339,6 +342,8 @@ test("full scribe flow with mock providers produces note from transcript", async
   assert.equal(typeof res.json.noteDraft, "string");
   assert.equal(typeof res.json.transcript, "string");
   assert.match(res.json.transcript, /52-årig/);
+  assert.equal(res.json.transcriptDocument.language, "sv");
+  assert.ok(Array.isArray(res.json.transcriptDocument.words));
   assert.ok(res.json.prompt, "response should include prompt");
   assert.ok(res.json.prompt.system, "prompt should have system field");
   assert.ok(res.json.prompt.user, "prompt should have user field");

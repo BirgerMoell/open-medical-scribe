@@ -2,13 +2,15 @@ import { buildSoapNoteFromTranscript } from "./soapFormatter.js";
 import { createAuditLogger } from "./auditLogger.js";
 import { maybeRedactForProvider } from "./privacy.js";
 import { buildNotePrompt } from "./promptBuilder.js";
+import { buildTranscriptDocument } from "./transcriptArtifacts.js";
 
 export function createScribeService({ config, transcriptionProvider, noteGenerator }) {
   const audit = createAuditLogger(config);
 
   return {
     async transcribeOnly(input) {
-      const transcript = await resolveTranscript({ input, transcriptionProvider });
+      const transcriptDocument = await resolveTranscriptDocument({ input, transcriptionProvider });
+      const transcript = transcriptDocument.text;
       audit.log({
         event: "transcribe_only",
         provider: transcriptionProvider.name,
@@ -16,6 +18,7 @@ export function createScribeService({ config, transcriptionProvider, noteGenerat
       });
       return {
         transcript,
+        transcriptDocument,
         provider: transcriptionProvider.name,
       };
     },
@@ -27,7 +30,8 @@ export function createScribeService({ config, transcriptionProvider, noteGenerat
         throw error;
       }
 
-      const transcript = await resolveTranscript({ input, transcriptionProvider });
+      const transcriptDocument = await resolveTranscriptDocument({ input, transcriptionProvider });
+      const transcript = transcriptDocument.text;
       const noteStyle = input.noteStyle || config.defaultNoteStyle || "soap";
       const specialty = input.specialty || config.defaultSpecialty || "primary-care";
       const redacted = maybeRedactForProvider({
@@ -72,6 +76,7 @@ export function createScribeService({ config, transcriptionProvider, noteGenerat
           note: noteGenerator.name,
         },
         transcript,
+        transcriptDocument,
         noteDraft: draft.noteText || (fallback ? fallback.noteText : "") || "",
         sections: draft.sections || (fallback ? fallback.sections : {}),
         codingHints: draft.codingHints || [],
@@ -108,7 +113,7 @@ export function createScribeService({ config, transcriptionProvider, noteGenerat
   };
 }
 
-async function resolveTranscript({ input, transcriptionProvider }) {
+async function resolveTranscriptDocument({ input, transcriptionProvider }) {
   const transcriptionHints = {
     language: typeof input.language === "string" ? input.language : undefined,
     country: typeof input.country === "string" ? input.country : undefined,
@@ -116,7 +121,7 @@ async function resolveTranscript({ input, transcriptionProvider }) {
   };
 
   if (typeof input.transcript === "string" && input.transcript.trim()) {
-    return normalizeTranscript(input.transcript);
+    return buildTranscriptDocument({ text: input.transcript }, transcriptionHints);
   }
 
   if (typeof input.audioText === "string" && input.audioText.trim()) {
@@ -126,7 +131,7 @@ async function resolveTranscript({ input, transcriptionProvider }) {
       mimeType: "text/plain",
       ...transcriptionHints,
     });
-    return normalizeTranscript(result.text);
+    return buildTranscriptDocument(result, transcriptionHints);
   }
 
   if (typeof input.audioBase64 === "string" && input.audioBase64.trim()) {
@@ -136,7 +141,7 @@ async function resolveTranscript({ input, transcriptionProvider }) {
       mimeType: input.audioMimeType || "audio/wav",
       ...transcriptionHints,
     });
-    return normalizeTranscript(result.text);
+    return buildTranscriptDocument(result, transcriptionHints);
   }
 
   const error = new Error(
@@ -144,8 +149,4 @@ async function resolveTranscript({ input, transcriptionProvider }) {
   );
   error.statusCode = 400;
   throw error;
-}
-
-function normalizeTranscript(text) {
-  return String(text).replace(/\s+/g, " ").trim();
 }

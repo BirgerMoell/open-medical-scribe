@@ -1,22 +1,23 @@
 import { spawn } from "node:child_process";
+import { transcriptFromPlainText } from "./resultAdapter.js";
 
 export function createWhisperCppTranscriptionProvider(config) {
   return {
     name: config.transcriptionProvider,
     async transcribe(input) {
       if (input.type === "text-simulated-audio") {
-        return { text: input.content };
+        return transcriptFromPlainText(input.content, { language: input.language });
       }
 
       const command = config.whisper.localCommand;
       if (!command) {
-        return {
-          text: `[${config.transcriptionProvider} placeholder] Set WHISPER_LOCAL_COMMAND to enable local transcription execution.`,
-        };
+        return transcriptFromPlainText(
+          `[${config.transcriptionProvider} placeholder] Set WHISPER_LOCAL_COMMAND to enable local transcription execution.`,
+        );
       }
 
       if (input.type !== "audio-base64") {
-        return { text: "" };
+        return transcriptFromPlainText("");
       }
 
       const audioBytes = Buffer.from(input.content, "base64");
@@ -26,7 +27,7 @@ export function createWhisperCppTranscriptionProvider(config) {
         mimeType: input.mimeType,
         timeoutMs: config.whisper.timeoutMs,
       });
-      return { text: transcript };
+      return transcriptFromPlainText(transcript, { language: input.language });
     },
   };
 }

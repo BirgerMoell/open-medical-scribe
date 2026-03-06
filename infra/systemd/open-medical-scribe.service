@@ -1,0 +1,22 @@
+[Unit]
+Description=Open Medical Scribe backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/open-medical-scribe
+EnvironmentFile=/etc/open-medical-scribe.env
+ExecStart=/usr/bin/node /opt/open-medical-scribe/src/index.js
+Restart=on-failure
+RestartSec=5
+User=scribe
+Group=scribe
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/open-medical-scribe/data
+
+[Install]
+WantedBy=multi-user.target

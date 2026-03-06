@@ -1,6 +1,6 @@
 {
   "appId": "com.openmedicalscribe.app",
-  "productName": "Open Medical Scribe",
+  "productName": "Eir Scribe",
   "asar": true,
   "files": [
     "src",

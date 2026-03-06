@@ -1,64 +1,37 @@
+import {
+  extensionFromMime,
+  mapSegmentList,
+  mapWordList,
+  safeJson,
+  transcriptFromPlainText,
+} from "./resultAdapter.js";
+
 export function createBergetTranscriptionProvider(config) {
   return {
     name: "berget",
     async transcribe(input) {
       if (input.type === "text-simulated-audio") {
-        return { text: input.content };
+        return transcriptFromPlainText(input.content, { language: input.language });
       }
 
       if (!config.berget.apiKey) {
-        return {
-          text: "[berget provider not configured] Set BERGET_API_KEY to enable Berget AI transcription.",
-        };
+        return transcriptFromPlainText(
+          "[berget provider not configured] Set BERGET_API_KEY to enable Berget AI transcription.",
+        );
       }
 
       if (input.type !== "audio-base64") {
-        return { text: "" };
+        return transcriptFromPlainText("");
       }
 
       const bytes = Buffer.from(input.content, "base64");
-      const ext = extensionFromMime(input.mimeType);
-      const form = new FormData();
-      form.append(
-        "file",
-        new Blob([bytes], { type: input.mimeType || "audio/wav" }),
-        `audio.${ext}`,
-      );
-      form.append("model", config.berget.transcribeModel);
-
-      if (input.language) {
-        form.append("language", String(input.language));
-      }
-
-      const baseUrl = config.berget.baseUrl.replace(/\/+$/, "");
-
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 120000);
 
       try {
-        const response = await fetch(`${baseUrl}/v1/audio/transcriptions`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${config.berget.apiKey}`,
-          },
-          body: form,
-          signal: controller.signal,
+        return await requestBergetTranscription(config, input, bytes, controller.signal, {
+          verbose: true,
         });
-
-        const text = await response.text();
-        if (!response.ok) {
-          const error = new Error(
-            `Berget AI transcription failed (${response.status}): ${text || response.statusText}`,
-          );
-          error.statusCode = 502;
-          throw error;
-        }
-
-        const maybeJson = safeJson(text);
-        if (typeof maybeJson?.text === "string") {
-          return { text: maybeJson.text };
-        }
-        return { text: text.trim() };
       } finally {
         clearTimeout(timeout);
       }
@@ -66,19 +39,75 @@ export function createBergetTranscriptionProvider(config) {
   };
 }
 
-function extensionFromMime(mimeType) {
-  const mime = String(mimeType || "").toLowerCase();
-  if (mime.includes("wav")) return "wav";
-  if (mime.includes("mpeg") || mime.includes("mp3")) return "mp3";
-  if (mime.includes("mp4") || mime.includes("m4a")) return "m4a";
-  if (mime.includes("webm")) return "webm";
-  return "bin";
+async function requestBergetTranscription(config, input, bytes, signal, { verbose }) {
+  const ext = extensionFromMime(input.mimeType);
+  const form = new FormData();
+  form.append(
+    "file",
+    new Blob([bytes], { type: input.mimeType || "audio/wav" }),
+    `audio.${ext}`,
+  );
+  form.append("model", config.berget.transcribeModel);
+  if (input.language) {
+    form.append("language", String(input.language));
+  }
+  if (verbose) {
+    form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "segment");
+    form.append("timestamp_granularities[]", "word");
+  }
+
+  const baseUrl = config.berget.baseUrl.replace(/\/+$/, "");
+  const response = await fetch(`${baseUrl}/v1/audio/transcriptions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.berget.apiKey}`,
+    },
+    body: form,
+    signal,
+  });
+
+  const text = await response.text();
+  const maybeJson = safeJson(text);
+  if (!response.ok) {
+    if (verbose && shouldRetryWithoutVerbose(response.status, maybeJson, text)) {
+      return requestBergetTranscription(config, input, bytes, signal, { verbose: false });
+    }
+
+    const error = new Error(
+      `Berget AI transcription failed (${response.status}): ${text || response.statusText}`,
+    );
+    error.statusCode = 502;
+    throw error;
+  }
+
+  if (typeof maybeJson?.text === "string") {
+    return transcriptFromPlainText(maybeJson.text, {
+      language: maybeJson.language || input.language,
+      durationSec: maybeJson.duration,
+      words: mapWordList(maybeJson.words, (word) => ({
+        text: word?.word ?? word?.text,
+        start: word?.start,
+        end: word?.end,
+      })),
+      segments: mapSegmentList(maybeJson.segments, (segment) => ({
+        text: segment?.text,
+        start: segment?.start,
+        end: segment?.end,
+      })),
+    });
+  }
+
+  return transcriptFromPlainText(text.trim(), { language: input.language });
 }
 
-function safeJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+function shouldRetryWithoutVerbose(status, json, text) {
+  if (![400, 404, 415, 422].includes(status)) return false;
+  const haystack = `${json?.error?.message || ""} ${text || ""}`.toLowerCase();
+  return (
+    haystack.includes("response_format")
+    || haystack.includes("timestamp")
+    || haystack.includes("verbose_json")
+    || haystack.includes("granularit")
+  );
 }

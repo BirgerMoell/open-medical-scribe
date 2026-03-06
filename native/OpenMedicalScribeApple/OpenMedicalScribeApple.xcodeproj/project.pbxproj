@@ -1,0 +1,555 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03B02755936AD94937A690E5 /* ScribeExecutionMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4548F4620F9B727577C739ED /* ScribeExecutionMode.swift */; };
+		06220E45A59C07B5E2EAE474 /* OpenMedicalScribeMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8B5AEA6AB6F8B5FF07FB37 /* OpenMedicalScribeMacApp.swift */; };
+		08055144F59F3F56603F4B6D /* EncounterExportFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */; };
+		1185F756C0DB76D96E3600FF /* OnDeviceScribeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89E19A13C5D634F475D677DF /* OnDeviceScribeEngine.swift */; };
+		145995D27CFD716EC6858285 /* OpenMedicalScribeMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8B5AEA6AB6F8B5FF07FB37 /* OpenMedicalScribeMacApp.swift */; };
+		248FB2DF44DB886A9BF95EB4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DDDB3B674266C4DA3B34922C /* PrivacyInfo.xcprivacy */; };
+		257F3C84535D0490436AE00F /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 17E643FE9022BE596E25D54C /* MLXLLM */; };
+		2D4A46598B1235E7BFD8B1F0 /* KeychainSecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C05C281B4AD4CBB942DE32 /* KeychainSecretStore.swift */; };
+		35ACF89C73AD32EA6076A72B /* OnDeviceNotePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F588479BD44485F2482FA88 /* OnDeviceNotePromptBuilder.swift */; };
+		38EFB004444CB43600C329A9 /* LocalBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */; };
+		3AFEEB0257F8BB85734A9DC9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 69C3F922450945203E7D8712 /* Assets.xcassets */; };
+		3B5E38EAC3C98A469DBE371B /* SavedEncounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE7CCABEDB65CC67006D114 /* SavedEncounter.swift */; };
+		3DEA8DA8150CAB00DD26F31C /* ScribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CCDF9469679365554C3FD4 /* ScribeClient.swift */; };
+		46BECB1411BC29CA47E1B955 /* SavedEncounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE7CCABEDB65CC67006D114 /* SavedEncounter.swift */; };
+		47AD6365329818EE9054DF61 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DDDB3B674266C4DA3B34922C /* PrivacyInfo.xcprivacy */; };
+		557BA4FB3E1E8395DF6E6832 /* ScribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CCDF9469679365554C3FD4 /* ScribeClient.swift */; };
+		618A39A52998F2DAB7F01521 /* ScribeExecutionMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4548F4620F9B727577C739ED /* ScribeExecutionMode.swift */; };
+		7231BBD62F6354C4FFB9ED01 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B8E7687E240C9D91B2E2343C /* MLXLMCommon */; };
+		7BC00C3E0C1F0A2BBA3993B8 /* OnDeviceScribeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89E19A13C5D634F475D677DF /* OnDeviceScribeEngine.swift */; };
+		7D5EF6DFDB443B9DC544FE30 /* ClipboardWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E906B979AC27E06AEF1494 /* ClipboardWriter.swift */; };
+		7F9EAA3A70B68B257C18656F /* PhoneAudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1830470DE58232897B72717 /* PhoneAudioRecorder.swift */; };
+		85C43B427E3F227C233333EC /* EncounterExportFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */; };
+		90C4C12169D83A24E0C8D778 /* LocalBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */; };
+		94862102F7A3902E34AB4CD7 /* KeychainSecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C05C281B4AD4CBB942DE32 /* KeychainSecretStore.swift */; };
+		998F4BFAB97A302A0046EA05 /* ClipboardWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E906B979AC27E06AEF1494 /* ClipboardWriter.swift */; };
+		B0FFF584778AB8AF04A35D35 /* NoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C63A46820BAD53BA761FE0 /* NoteArchiveStore.swift */; };
+		B2680AA62ECCD39208D6C11C /* BergetScribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */; };
+		B9A9C3BD35C0F0DCBAD47CC6 /* OnDeviceNotePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F588479BD44485F2482FA88 /* OnDeviceNotePromptBuilder.swift */; };
+		BD315412781C066BFD4D52AC /* NoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C63A46820BAD53BA761FE0 /* NoteArchiveStore.swift */; };
+		BF0E196CEB8FC3F111C13693 /* BergetScribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */; };
+		C4EF36277FDC7B30AA62AEDE /* ScribeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910357D7B895DF920FB2D670 /* ScribeViewModel.swift */; };
+		D6062786511E9151DBF07801 /* ScribeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910357D7B895DF920FB2D670 /* ScribeViewModel.swift */; };
+		DF2FFEEC88F809B6133E5FC9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 69C3F922450945203E7D8712 /* Assets.xcassets */; };
+		F11B82CA3425DD28B483FF82 /* PhoneAudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1830470DE58232897B72717 /* PhoneAudioRecorder.swift */; };
+		F4AFC0E9055442DAA8F05E75 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 825B82B6D05888667B375FC6 /* WhisperKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2AE7CCABEDB65CC67006D114 /* SavedEncounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedEncounter.swift; sourceTree = "<group>"; };
+		40E906B979AC27E06AEF1494 /* ClipboardWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardWriter.swift; sourceTree = "<group>"; };
+		42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBackendManager.swift; sourceTree = "<group>"; };
+		4548F4620F9B727577C739ED /* ScribeExecutionMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScribeExecutionMode.swift; sourceTree = "<group>"; };
+		4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BergetScribeClient.swift; sourceTree = "<group>"; };
+		4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncounterExportFormatter.swift; sourceTree = "<group>"; };
+		69C3F922450945203E7D8712 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		77C63A46820BAD53BA761FE0 /* NoteArchiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteArchiveStore.swift; sourceTree = "<group>"; };
+		819DF179DE2861FDBFFA6E6C /* OpenMedicalScribeMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenMedicalScribeMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		89E19A13C5D634F475D677DF /* OnDeviceScribeEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceScribeEngine.swift; sourceTree = "<group>"; };
+		910357D7B895DF920FB2D670 /* ScribeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScribeViewModel.swift; sourceTree = "<group>"; };
+		97C05C281B4AD4CBB942DE32 /* KeychainSecretStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainSecretStore.swift; sourceTree = "<group>"; };
+		9F588479BD44485F2482FA88 /* OnDeviceNotePromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceNotePromptBuilder.swift; sourceTree = "<group>"; };
+		C1830470DE58232897B72717 /* PhoneAudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAudioRecorder.swift; sourceTree = "<group>"; };
+		D0B9FBE73BCF912CA1EE9D7A /* OpenMedicalScribeiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OpenMedicalScribeiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D4CCDF9469679365554C3FD4 /* ScribeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScribeClient.swift; sourceTree = "<group>"; };
+		DDDB3B674266C4DA3B34922C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EF8B5AEA6AB6F8B5FF07FB37 /* OpenMedicalScribeMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMedicalScribeMacApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8A70430905ECA5C76C705A1B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F4AFC0E9055442DAA8F05E75 /* WhisperKit in Frameworks */,
+				7231BBD62F6354C4FFB9ED01 /* MLXLMCommon in Frameworks */,
+				257F3C84535D0490436AE00F /* MLXLLM in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FBE0D57E4CA64D00A7A2F8 /* OpenMedicalScribeMac */ = {
+			isa = PBXGroup;
+			children = (
+				4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */,
+				40E906B979AC27E06AEF1494 /* ClipboardWriter.swift */,
+				4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */,
+				97C05C281B4AD4CBB942DE32 /* KeychainSecretStore.swift */,
+				42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */,
+				77C63A46820BAD53BA761FE0 /* NoteArchiveStore.swift */,
+				9F588479BD44485F2482FA88 /* OnDeviceNotePromptBuilder.swift */,
+				89E19A13C5D634F475D677DF /* OnDeviceScribeEngine.swift */,
+				EF8B5AEA6AB6F8B5FF07FB37 /* OpenMedicalScribeMacApp.swift */,
+				C1830470DE58232897B72717 /* PhoneAudioRecorder.swift */,
+				2AE7CCABEDB65CC67006D114 /* SavedEncounter.swift */,
+				D4CCDF9469679365554C3FD4 /* ScribeClient.swift */,
+				4548F4620F9B727577C739ED /* ScribeExecutionMode.swift */,
+				910357D7B895DF920FB2D670 /* ScribeViewModel.swift */,
+			);
+			name = OpenMedicalScribeMac;
+			path = ../OpenMedicalScribeMac/Sources/OpenMedicalScribeMac;
+			sourceTree = "<group>";
+		};
+		7356AD8479DD899845E576E0 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				69C3F922450945203E7D8712 /* Assets.xcassets */,
+				DDDB3B674266C4DA3B34922C /* PrivacyInfo.xcprivacy */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		C6BE15FAD325FBF602531952 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D0B9FBE73BCF912CA1EE9D7A /* OpenMedicalScribeiOS.app */,
+				819DF179DE2861FDBFFA6E6C /* OpenMedicalScribeMac.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F60FA221C7AB040343496EE7 = {
+			isa = PBXGroup;
+			children = (
+				08FBE0D57E4CA64D00A7A2F8 /* OpenMedicalScribeMac */,
+				7356AD8479DD899845E576E0 /* Support */,
+				C6BE15FAD325FBF602531952 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5B1070054A874FA355A5C895 /* OpenMedicalScribeMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 850C7A53B1221269FF478ACA /* Build configuration list for PBXNativeTarget "OpenMedicalScribeMac" */;
+			buildPhases = (
+				A21B535120672A533CD688B9 /* Sources */,
+				80B64E7C5CBA52F1CCFA2839 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenMedicalScribeMac;
+			packageProductDependencies = (
+			);
+			productName = OpenMedicalScribeMac;
+			productReference = 819DF179DE2861FDBFFA6E6C /* OpenMedicalScribeMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		86C3E67964D171E878221B03 /* OpenMedicalScribeiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3451CD3EAB453AE378BA611 /* Build configuration list for PBXNativeTarget "OpenMedicalScribeiOS" */;
+			buildPhases = (
+				14871A40B0036092876CB2DF /* Sources */,
+				EB2F6381F4C029C478A1C710 /* Resources */,
+				8A70430905ECA5C76C705A1B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenMedicalScribeiOS;
+			packageProductDependencies = (
+				825B82B6D05888667B375FC6 /* WhisperKit */,
+				B8E7687E240C9D91B2E2343C /* MLXLMCommon */,
+				17E643FE9022BE596E25D54C /* MLXLLM */,
+			);
+			productName = OpenMedicalScribeiOS;
+			productReference = D0B9FBE73BCF912CA1EE9D7A /* OpenMedicalScribeiOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2F2D3A7761096BF375B5A956 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					86C3E67964D171E878221B03 = {
+						DevelopmentTeam = YJ9A3JT299;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D85550EF2E809B6DFAC66F2A /* Build configuration list for PBXProject "OpenMedicalScribeApple" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F60FA221C7AB040343496EE7;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				19964912E10EE21CA5A8A631 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				821C95002C92E7ABD9571510 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5B1070054A874FA355A5C895 /* OpenMedicalScribeMac */,
+				86C3E67964D171E878221B03 /* OpenMedicalScribeiOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		80B64E7C5CBA52F1CCFA2839 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AFEEB0257F8BB85734A9DC9 /* Assets.xcassets in Resources */,
+				47AD6365329818EE9054DF61 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EB2F6381F4C029C478A1C710 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DF2FFEEC88F809B6133E5FC9 /* Assets.xcassets in Resources */,
+				248FB2DF44DB886A9BF95EB4 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		14871A40B0036092876CB2DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF0E196CEB8FC3F111C13693 /* BergetScribeClient.swift in Sources */,
+				7D5EF6DFDB443B9DC544FE30 /* ClipboardWriter.swift in Sources */,
+				85C43B427E3F227C233333EC /* EncounterExportFormatter.swift in Sources */,
+				2D4A46598B1235E7BFD8B1F0 /* KeychainSecretStore.swift in Sources */,
+				38EFB004444CB43600C329A9 /* LocalBackendManager.swift in Sources */,
+				BD315412781C066BFD4D52AC /* NoteArchiveStore.swift in Sources */,
+				35ACF89C73AD32EA6076A72B /* OnDeviceNotePromptBuilder.swift in Sources */,
+				1185F756C0DB76D96E3600FF /* OnDeviceScribeEngine.swift in Sources */,
+				06220E45A59C07B5E2EAE474 /* OpenMedicalScribeMacApp.swift in Sources */,
+				F11B82CA3425DD28B483FF82 /* PhoneAudioRecorder.swift in Sources */,
+				46BECB1411BC29CA47E1B955 /* SavedEncounter.swift in Sources */,
+				3DEA8DA8150CAB00DD26F31C /* ScribeClient.swift in Sources */,
+				618A39A52998F2DAB7F01521 /* ScribeExecutionMode.swift in Sources */,
+				C4EF36277FDC7B30AA62AEDE /* ScribeViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A21B535120672A533CD688B9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B2680AA62ECCD39208D6C11C /* BergetScribeClient.swift in Sources */,
+				998F4BFAB97A302A0046EA05 /* ClipboardWriter.swift in Sources */,
+				08055144F59F3F56603F4B6D /* EncounterExportFormatter.swift in Sources */,
+				94862102F7A3902E34AB4CD7 /* KeychainSecretStore.swift in Sources */,
+				90C4C12169D83A24E0C8D778 /* LocalBackendManager.swift in Sources */,
+				B0FFF584778AB8AF04A35D35 /* NoteArchiveStore.swift in Sources */,
+				B9A9C3BD35C0F0DCBAD47CC6 /* OnDeviceNotePromptBuilder.swift in Sources */,
+				7BC00C3E0C1F0A2BBA3993B8 /* OnDeviceScribeEngine.swift in Sources */,
+				145995D27CFD716EC6858285 /* OpenMedicalScribeMacApp.swift in Sources */,
+				7F9EAA3A70B68B257C18656F /* PhoneAudioRecorder.swift in Sources */,
+				3B5E38EAC3C98A469DBE371B /* SavedEncounter.swift in Sources */,
+				557BA4FB3E1E8395DF6E6832 /* ScribeClient.swift in Sources */,
+				03B02755936AD94937A690E5 /* ScribeExecutionMode.swift in Sources */,
+				D6062786511E9151DBF07801 /* ScribeViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		22DECB85A8C23AC1FCD9EB05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				EIR_PRIVACY_POLICY_URL = "https://birgermoell.github.io/open-medical-scribe/privacy-policy.html";
+				EIR_SUPPORT_URL = "https://birgermoell.github.io/open-medical-scribe/support.html";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OMS_DEFAULT_BACKEND_URL = "http://192.168.86.116:8799";
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "Eir Scribe";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		2D9DE2DEB733EB27AA497DED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Support/OpenMedicalScribeMac-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.openmedicalscribe.mac;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		5E76F1F5E063578111A4D010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YJ9A3JT299;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Support/OpenMedicalScribeiOS-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.openmedicalscribe.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A1F30271F9A1E58C25423640 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Support/OpenMedicalScribeMac-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.openmedicalscribe.mac;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D408A7A15D45920DE0937179 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EIR_PRIVACY_POLICY_URL = "https://birgermoell.github.io/open-medical-scribe/privacy-policy.html";
+				EIR_SUPPORT_URL = "https://birgermoell.github.io/open-medical-scribe/support.html";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OMS_DEFAULT_BACKEND_URL = "";
+				PRODUCT_NAME = "Eir Scribe";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E2CB25E98812F54DF628AE1A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YJ9A3JT299;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Support/OpenMedicalScribeiOS-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.openmedicalscribe.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		850C7A53B1221269FF478ACA /* Build configuration list for PBXNativeTarget "OpenMedicalScribeMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2D9DE2DEB733EB27AA497DED /* Debug */,
+				A1F30271F9A1E58C25423640 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D85550EF2E809B6DFAC66F2A /* Build configuration list for PBXProject "OpenMedicalScribeApple" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22DECB85A8C23AC1FCD9EB05 /* Debug */,
+				D408A7A15D45920DE0937179 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F3451CD3EAB453AE378BA611 /* Build configuration list for PBXNativeTarget "OpenMedicalScribeiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2CB25E98812F54DF628AE1A /* Debug */,
+				5E76F1F5E063578111A4D010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		19964912E10EE21CA5A8A631 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm.git";
+			requirement = {
+				kind = revision;
+				revision = e33eba8513595bde535719c48fedcb10ade5af57;
+			};
+		};
+		821C95002C92E7ABD9571510 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		17E643FE9022BE596E25D54C /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 19964912E10EE21CA5A8A631 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		825B82B6D05888667B375FC6 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 821C95002C92E7ABD9571510 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+		B8E7687E240C9D91B2E2343C /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 19964912E10EE21CA5A8A631 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 2F2D3A7761096BF375B5A956 /* Project object */;
+}

@@ -6,6 +6,7 @@ import { serveStaticFile } from "./static.js";
 import { buildFhirDocumentReference } from "../services/fhirExport.js";
 import { parseMultipartFormData } from "../util/multipart.js";
 import { applySavedSettings, saveSettings, configToSettingsResponse } from "../services/settingsStore.js";
+import { buildTranscriptDocument, searchTranscriptDocument } from "../services/transcriptArtifacts.js";
 
 export function createApp({ config }) {
   let transcriptionProvider = createTranscriptionProvider(config);
@@ -25,6 +26,11 @@ export function createApp({ config }) {
   return {
     async handler(req, res) {
       try {
+        if (requiresBearerAuth(req, config) && !isAuthorized(req, config)) {
+          res.setHeader("WWW-Authenticate", 'Bearer realm="open-medical-scribe"');
+          return jsonResponse(res, 401, { error: "Unauthorized" });
+        }
+
         if (req.method === "GET" && req.url === "/health") {
           return jsonResponse(res, 200, {
             ok: true,
@@ -63,12 +69,13 @@ export function createApp({ config }) {
               note: [
                 { id: "mock", name: "Mock (dev)", type: "mock", configured: true },
                 { id: "openai", name: "OpenAI", type: "cloud", configured: !!config.openai.apiKey },
+                { id: "berget", name: "Berget AI (EU)", type: "cloud", configured: !!config.berget.apiKey },
                 { id: "anthropic", name: "Anthropic Claude", type: "cloud", configured: !!config.anthropic.apiKey },
                 { id: "gemini", name: "Google Gemini", type: "cloud", configured: !!config.gemini.apiKey },
                 { id: "ollama", name: "Ollama (local)", type: "local", configured: true },
               ],
             },
-            noteStyles: ["soap", "hp", "progress", "dap", "procedure"],
+            noteStyles: ["soap", "hp", "progress", "dap", "procedure", "journal"],
           });
         }
 
@@ -77,7 +84,7 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/settings") {
-          const patch = await readJsonBody(req);
+          const patch = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const merged = saveSettings(patch);
           applySavedSettings(config);
           rebuildProviders();
@@ -86,15 +93,41 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/encounters/scribe") {
-          const body = await readJsonBody(req);
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const result = await scribeService.processEncounter(body);
           return jsonResponse(res, 200, result);
         }
 
         if (req.method === "POST" && req.url === "/v1/transcribe") {
-          const body = await readJsonBody(req);
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const transcript = await scribeService.transcribeOnly(body);
           return jsonResponse(res, 200, transcript);
+        }
+
+        if (req.method === "POST" && req.url === "/v1/transcripts/search") {
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
+          if (!body || typeof body.query !== "string" || !body.query.trim()) {
+            return jsonResponse(res, 400, { error: "query is required" });
+          }
+
+          const transcriptDocument = body.transcriptDocument
+            ? buildTranscriptDocument(body.transcriptDocument, body.transcriptDocument)
+            : buildTranscriptDocument(
+              { text: body.transcript || "" },
+              {
+                language: body.language,
+                locale: body.locale,
+                country: body.country,
+              },
+            );
+
+          return jsonResponse(res, 200, {
+            query: body.query,
+            transcriptDocument,
+            matches: searchTranscriptDocument(transcriptDocument, body.query, {
+              limit: body.limit,
+            }),
+          });
         }
 
         if (req.method === "POST" && req.url === "/v1/transcribe/upload") {
@@ -103,7 +136,7 @@ export function createApp({ config }) {
             throw badRequest("Expected multipart/form-data");
           }
 
-          const raw = await readRawBody(req);
+          const raw = await readRawBody(req, { maxBytes: config.http.maxRequestBytes });
           const form = parseMultipartFormData(raw, contentType);
           const audio = form.files.audio;
           if (!audio?.buffer?.length) {
@@ -126,7 +159,7 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/export/fhir-document-reference") {
-          const body = await readJsonBody(req);
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           if (!body || typeof body.noteText !== "string" || !body.noteText.trim()) {
             return jsonResponse(res, 400, { error: "noteText is required" });
           }
@@ -174,4 +207,23 @@ export function createApp({ config }) {
       }
     },
   };
+}
+
+function requiresBearerAuth(req, config) {
+  const token = config?.auth?.bearerToken || "";
+  if (!token) {
+    return false;
+  }
+
+  return typeof req.url === "string" && req.url.startsWith("/v1/");
+}
+
+function isAuthorized(req, config) {
+  const expected = config?.auth?.bearerToken || "";
+  if (!expected) {
+    return true;
+  }
+
+  const header = req.headers?.authorization || req.headers?.Authorization || "";
+  return header === `Bearer ${expected}`;
 }

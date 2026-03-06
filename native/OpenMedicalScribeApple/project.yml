@@ -1,0 +1,109 @@
+name: OpenMedicalScribeApple
+options:
+  minimumXcodeGenVersion: 2.38.0
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    PRODUCT_NAME: Eir Scribe
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+  configs:
+    Debug:
+      OMS_DEFAULT_BACKEND_URL: http://192.168.86.116:8799
+      EIR_SUPPORT_URL: https://birgermoell.github.io/open-medical-scribe/support.html
+      EIR_PRIVACY_POLICY_URL: https://birgermoell.github.io/open-medical-scribe/privacy-policy.html
+    Release:
+      OMS_DEFAULT_BACKEND_URL: ""
+      EIR_SUPPORT_URL: https://birgermoell.github.io/open-medical-scribe/support.html
+      EIR_PRIVACY_POLICY_URL: https://birgermoell.github.io/open-medical-scribe/privacy-policy.html
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit.git
+    from: 0.9.4
+  MLXSwiftLM:
+    url: https://github.com/ml-explore/mlx-swift-lm.git
+    revision: e33eba8513595bde535719c48fedcb10ade5af57
+targets:
+  OpenMedicalScribeMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - ../OpenMedicalScribeMac/Sources/OpenMedicalScribeMac
+      - path: Support/Assets.xcassets
+        buildPhase: resources
+      - path: Support/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    info:
+      path: Support/OpenMedicalScribeMac-Info.plist
+      properties:
+        CFBundleDisplayName: Eir Scribe
+        LSApplicationCategoryType: public.app-category.medical
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.openmedicalscribe.mac
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        GENERATE_INFOPLIST_FILE: NO
+  OpenMedicalScribeiOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - ../OpenMedicalScribeMac/Sources/OpenMedicalScribeMac
+      - path: Support/Assets.xcassets
+        buildPhase: resources
+      - path: Support/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    dependencies:
+      - package: WhisperKit
+        product: WhisperKit
+      - package: MLXSwiftLM
+        product: MLXLMCommon
+      - package: MLXSwiftLM
+        product: MLXLLM
+    info:
+      path: Support/OpenMedicalScribeiOS-Info.plist
+      properties:
+        CFBundleDisplayName: Eir Scribe
+        UIApplicationSupportsIndirectInputEvents: YES
+        UILaunchScreen: {}
+        OMSDefaultBackendURL: $(OMS_DEFAULT_BACKEND_URL)
+        EIRSupportURL: $(EIR_SUPPORT_URL)
+        EIRPrivacyPolicyURL: $(EIR_PRIVACY_POLICY_URL)
+        NSLocalNetworkUsageDescription: Connect to your local Eir Scribe backend on your trusted network.
+        NSMicrophoneUsageDescription: Record the clinical conversation so the app can transcribe it and draft a note.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: YES
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.openmedicalscribe.ios
+        DEVELOPMENT_TEAM: YJ9A3JT299
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: 1,2
+        GENERATE_INFOPLIST_FILE: NO
+schemes:
+  OpenMedicalScribeMac:
+    build:
+      targets:
+        OpenMedicalScribeMac: all
+    run:
+      config: Debug
+  OpenMedicalScribeiOS:
+    build:
+      targets:
+        OpenMedicalScribeiOS: all
+    run:
+      config: Debug

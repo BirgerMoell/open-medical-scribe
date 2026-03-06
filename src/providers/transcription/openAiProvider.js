@@ -1,74 +1,103 @@
+import {
+  extensionFromMime,
+  mapSegmentList,
+  mapWordList,
+  safeJson,
+  transcriptFromPlainText,
+} from "./resultAdapter.js";
+
 export function createOpenAiTranscriptionProvider(config) {
   return {
     name: "openai",
     async transcribe(input) {
       if (!config.openai.apiKey) {
-        return {
-          text: "[openai provider not configured] Set OPENAI_API_KEY to enable API transcription.",
-        };
+        return transcriptFromPlainText(
+          "[openai provider not configured] Set OPENAI_API_KEY to enable API transcription.",
+        );
       }
 
       if (input.type === "text-simulated-audio") {
-        return { text: input.content };
+        return transcriptFromPlainText(input.content, { language: input.language });
       }
 
       if (input.type !== "audio-base64") {
-        return { text: "" };
+        return transcriptFromPlainText("");
       }
 
-      const baseUrl = config.openai.baseUrl.replace(/\/+$/, "");
       const bytes = Buffer.from(input.content, "base64");
-      const form = new FormData();
-      const ext = extensionFromMime(input.mimeType);
-      form.append(
-        "file",
-        new Blob([bytes], { type: input.mimeType || "audio/wav" }),
-        `audio.${ext}`,
-      );
-      form.append("model", config.openai.transcribeModel);
-      if (input.language) {
-        form.append("language", String(input.language));
-      }
-
-      const response = await fetch(`${baseUrl}/v1/audio/transcriptions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.openai.apiKey}`,
-        },
-        body: form,
-      });
-
-      const text = await response.text();
-      if (!response.ok) {
-        const error = new Error(
-          `OpenAI transcription failed (${response.status}): ${text || response.statusText}`,
-        );
-        error.statusCode = 502;
-        throw error;
-      }
-
-      const maybeJson = safeJson(text);
-      if (typeof maybeJson?.text === "string") {
-        return { text: maybeJson.text };
-      }
-      return { text: text.trim() };
+      return await requestOpenAiTranscription(config, input, bytes, { verbose: true });
     },
   };
 }
 
-function extensionFromMime(mimeType) {
-  const mime = String(mimeType || "").toLowerCase();
-  if (mime.includes("wav")) return "wav";
-  if (mime.includes("mpeg") || mime.includes("mp3")) return "mp3";
-  if (mime.includes("mp4") || mime.includes("m4a")) return "m4a";
-  if (mime.includes("webm")) return "webm";
-  return "bin";
+async function requestOpenAiTranscription(config, input, bytes, { verbose }) {
+  const baseUrl = config.openai.baseUrl.replace(/\/+$/, "");
+  const form = new FormData();
+  const ext = extensionFromMime(input.mimeType);
+  form.append(
+    "file",
+    new Blob([bytes], { type: input.mimeType || "audio/wav" }),
+    `audio.${ext}`,
+  );
+  form.append("model", config.openai.transcribeModel);
+  if (input.language) {
+    form.append("language", String(input.language));
+  }
+  if (verbose) {
+    form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "segment");
+    form.append("timestamp_granularities[]", "word");
+  }
+
+  const response = await fetch(`${baseUrl}/v1/audio/transcriptions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.openai.apiKey}`,
+    },
+    body: form,
+  });
+
+  const text = await response.text();
+  const maybeJson = safeJson(text);
+  if (!response.ok) {
+    if (verbose && shouldRetryWithoutVerbose(response.status, maybeJson, text)) {
+      return requestOpenAiTranscription(config, input, bytes, { verbose: false });
+    }
+
+    const error = new Error(
+      `OpenAI transcription failed (${response.status}): ${text || response.statusText}`,
+    );
+    error.statusCode = 502;
+    throw error;
+  }
+
+  if (typeof maybeJson?.text === "string") {
+    return transcriptFromPlainText(maybeJson.text, {
+      language: maybeJson.language || input.language,
+      durationSec: maybeJson.duration,
+      words: mapWordList(maybeJson.words, (word) => ({
+        text: word?.word ?? word?.text,
+        start: word?.start,
+        end: word?.end,
+      })),
+      segments: mapSegmentList(maybeJson.segments, (segment) => ({
+        text: segment?.text,
+        start: segment?.start,
+        end: segment?.end,
+      })),
+    });
+  }
+
+  return transcriptFromPlainText(text.trim(), { language: input.language });
 }
 
-function safeJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+function shouldRetryWithoutVerbose(status, json, text) {
+  if (![400, 404, 415, 422].includes(status)) return false;
+  const haystack = `${json?.error?.message || ""} ${text || ""}`.toLowerCase();
+  return (
+    haystack.includes("response_format")
+    || haystack.includes("timestamp")
+    || haystack.includes("verbose_json")
+    || haystack.includes("granularit")
+  );
 }

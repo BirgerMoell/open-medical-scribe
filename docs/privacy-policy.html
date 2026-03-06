@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eir Scribe Privacy Policy</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6efe6;
+      --paper: #fffaf3;
+      --ink: #49372f;
+      --muted: #77645a;
+      --accent: #b96e52;
+      --stroke: #dccab6;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, var(--bg), #eadfcf);
+      color: var(--ink);
+    }
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 20px 64px;
+    }
+    article {
+      background: var(--paper);
+      border: 1px solid var(--stroke);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 24px 60px rgba(73, 55, 47, 0.08);
+    }
+    h1, h2 {
+      margin: 0 0 12px;
+    }
+    h1 {
+      font-size: 2rem;
+    }
+    h2 {
+      margin-top: 28px;
+      font-size: 1.05rem;
+    }
+    p, li {
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    ul {
+      padding-left: 20px;
+    }
+    .badge {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(185, 110, 82, 0.12);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+    .links a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <article>
+      <div class="badge">Eir Scribe</div>
+      <h1>Privacy Policy</h1>
+      <p>Eir Scribe is a clinician-assistive documentation app. It can process encounter audio, transcripts, note drafts, note edits, and export artifacts. It is not an autonomous diagnostic or treatment system.</p>
+      <p><strong>Last updated:</strong> March 6, 2026</p>
+
+      <h2>Data the app may process</h2>
+      <ul>
+        <li>Audio recordings of clinical conversations.</li>
+        <li>Generated transcripts and draft notes.</li>
+        <li>Manual note edits, saved-note history, and export files.</li>
+        <li>Configuration data such as backend URL, local model choice, and optional tokens or API keys.</li>
+      </ul>
+
+      <h2>Local and cloud processing</h2>
+      <p>When a user chooses local processing, model files are downloaded to the device and the transcription or note drafting flow can run locally. When a user chooses cloud processing, the recording and generated text are sent to the configured backend or, if the user opts in, directly to Berget.</p>
+      <p>If a user enters their own Berget API key, the app is designed to send cloud requests directly to Berget instead of proxying them through an Eir Scribe-managed service.</p>
+
+      <h2>Storage</h2>
+      <p>Saved notes and local settings are stored on the device. API keys and backend bearer tokens are stored in the Apple Keychain. Exported text or FHIR files are stored wherever the user explicitly shares or saves them.</p>
+
+      <h2>Retention and governance</h2>
+      <p>If Eir Scribe is deployed by a healthcare organization, that organization is responsible for lawful basis, retention periods, access control, journal import workflows, and deletion handling for patient data.</p>
+
+      <h2>Clinical responsibility</h2>
+      <p>All generated drafts require clinician review, editing, and sign-off before use in patient care or before import into a healthcare record.</p>
+
+      <h2>Contact and support</h2>
+      <p>For open-source support, bug reports, or privacy questions about this repository, use the GitHub project links below. If Eir Scribe is deployed by a healthcare organization, that organization should provide its own patient-facing and clinician-facing privacy contacts.</p>
+
+      <div class="links">
+        <a href="./support.html">Support</a>
+        <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub repository</a>
+        <a href="https://github.com/BirgerMoell/open-medical-scribe/issues">Report an issue</a>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

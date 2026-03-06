@@ -6,18 +6,13 @@ export function jsonResponse(res, statusCode, body) {
   res.end(payload);
 }
 
-export async function readJsonBody(req) {
-  const chunks = [];
-
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-
-  const raw = Buffer.concat(chunks).toString("utf8");
-  if (!raw) return {};
+export async function readJsonBody(req, options = {}) {
+  const raw = await readRawBody(req, options);
+  const text = raw.toString("utf8");
+  if (!text) return {};
 
   try {
-    return JSON.parse(raw);
+    return JSON.parse(text);
   } catch {
     const error = new Error("Invalid JSON request body");
     error.statusCode = 400;
@@ -25,11 +20,22 @@ export async function readJsonBody(req) {
   }
 }
 
-export async function readRawBody(req) {
+export async function readRawBody(req, options = {}) {
+  const maxBytes = options.maxBytes ?? Infinity;
   const chunks = [];
+  let totalBytes = 0;
+
   for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += buffer.length;
+    if (totalBytes > maxBytes) {
+      const error = new Error("Request body is too large");
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(buffer);
   }
+
   return Buffer.concat(chunks);
 }
 

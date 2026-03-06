@@ -1,19 +1,21 @@
+import { mapSegmentList, mapWordList, safeJson, transcriptFromPlainText } from "./resultAdapter.js";
+
 export function createDeepgramTranscriptionProvider(config) {
   return {
     name: "deepgram",
     async transcribe(input) {
       if (input.type === "text-simulated-audio") {
-        return { text: input.content };
+        return transcriptFromPlainText(input.content, { language: input.language });
       }
 
       if (!config.deepgram.apiKey) {
-        return {
-          text: "[deepgram provider not configured] Set DEEPGRAM_API_KEY to enable Deepgram transcription.",
-        };
+        return transcriptFromPlainText(
+          "[deepgram provider not configured] Set DEEPGRAM_API_KEY to enable Deepgram transcription.",
+        );
       }
 
       if (input.type !== "audio-base64") {
-        return { text: "" };
+        return transcriptFromPlainText("");
       }
 
       const audioBytes = Buffer.from(input.content, "base64");
@@ -23,6 +25,8 @@ export function createDeepgramTranscriptionProvider(config) {
         model: config.deepgram.model,
         smart_format: "true",
         punctuate: "true",
+        diarize: "true",
+        utterances: "true",
       });
 
       if (input.language) {
@@ -55,21 +59,27 @@ export function createDeepgramTranscriptionProvider(config) {
         }
 
         const json = safeJson(text);
-        const transcript =
-          json?.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
-
-        return { text: transcript };
+        const alternative = json?.results?.channels?.[0]?.alternatives?.[0];
+        return transcriptFromPlainText(alternative?.transcript || "", {
+          language: json?.results?.channels?.[0]?.detected_language || input.language,
+          durationSec: json?.metadata?.duration,
+          words: mapWordList(alternative?.words, (word) => ({
+            text: word?.punctuated_word ?? word?.word,
+            start: word?.start,
+            end: word?.end,
+            speaker: word?.speaker,
+            confidence: word?.confidence,
+          })),
+          segments: mapSegmentList(json?.results?.utterances, (segment) => ({
+            text: segment?.transcript,
+            start: segment?.start,
+            end: segment?.end,
+            speaker: segment?.speaker,
+          })),
+        });
       } finally {
         clearTimeout(timeout);
       }
     },
   };
-}
-
-function safeJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
 }

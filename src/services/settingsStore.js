@@ -103,6 +103,7 @@ export function configToSettingsResponse(config) {
     ollama: {
       baseUrl: config.ollama.baseUrl,
       model: config.ollama.model,
+      timeoutMs: config.ollama.timeoutMs,
     },
     deepgram: {
       apiKey: maskKey(config.deepgram.apiKey),
@@ -118,6 +119,7 @@ export function configToSettingsResponse(config) {
       apiKey: maskKey(config.berget.apiKey),
       baseUrl: config.berget.baseUrl,
       transcribeModel: config.berget.transcribeModel,
+      noteModel: config.berget.noteModel,
       hasKey: !!config.berget.apiKey,
     },
     streaming: {

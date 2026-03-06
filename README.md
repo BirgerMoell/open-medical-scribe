@@ -23,12 +23,15 @@ Open Medical Scribe is designed for clinicians, healthtech developers, researche
 - **Cloud provider support** -- Use OpenAI, Anthropic Claude, Google Gemini, Deepgram, Google Cloud Speech, or Berget AI for higher quality when privacy constraints allow.
 - **Hybrid mode** -- Mix local and cloud providers freely (e.g., local transcription with cloud LLM).
 - **Real-time streaming transcription** -- Live audio capture via WebSocket with AudioWorklet-based PCM streaming and interim results displayed in real time.
+- **Structured transcript artifacts** -- Batch transcription responses now preserve normalized text, word-level timings, segments, and language metadata when the upstream provider exposes them.
+- **Accent-insensitive transcript search** -- Search transcript documents for phrases such as `omhet` and still match Swedish text like `ömhet`, with excerpts and timestamps when available.
 - **Six clinical note formats** -- SOAP, History & Physical, Progress Note, DAP (behavioral health), Procedure Note, and Swedish Journalanteckning.
 - **Swedish medical focus** -- Native Swedish prompts, KB-Whisper ONNX model for Swedish medical speech, Swedish journal format with standard headings (Aktuellt, Anamnes, Status, Bedomning, Planering).
 - **International support** -- Country auto-detection (SE, US, GB, NO, DK, DE) with locale-appropriate transcription and note language.
 - **PHI redaction** -- Regex-based redaction of SSNs, phone numbers, emails, dates of birth, and medical record numbers before data is sent to cloud providers.
 - **FHIR export** -- Generate FHIR R4 DocumentReference resources from clinical notes for EHR integration.
 - **Desktop app (Electron)** -- One-click desktop application with optional bundled Whisper ONNX model and llama.cpp server for a fully self-contained experience.
+- **Native Apple clients** -- SwiftUI Apple-platform app support: macOS can launch the local stack directly, while iPhone/iPad can now run standalone with `WhisperKit` transcription plus an MLX-compatible Qwen note model such as `mlx-community/Qwen3.5-4B-4bit`; entering the upstream `Qwen/Qwen3.5-4B` model name resolves to that Apple-compatible variant automatically, and backend mode remains available as fallback.
 - **CLI tools** -- Standalone `scribe-transcribe` and `scribe-note` binaries for scripting and pipeline use.
 - **Web UI** -- Clean browser-based interface for recording, transcription review, note generation, and settings management.
 - **Settings UI** -- In-browser configuration of providers, models, privacy settings, and streaming options without editing environment files.
@@ -74,7 +77,7 @@ npm run dev
 Out of the box, the project starts in mock mode (no real transcription or note generation). To get real output with no API keys:
 
 1. **Local transcription:** Set `TRANSCRIPTION_PROVIDER=whisper-onnx` in `.env`. The Whisper ONNX model will be downloaded automatically on first use.
-2. **Local note generation:** Install [Ollama](https://ollama.ai/), pull a model (`ollama pull llama3.1:8b`), and set `NOTE_PROVIDER=ollama` in `.env`.
+2. **Local note generation:** Install [Ollama](https://ollama.ai/), pull a model (`ollama pull qwen3.5:4b` is a good local default on Apple Silicon), and set `NOTE_PROVIDER=ollama` in `.env`.
 
 ## Desktop App
 
@@ -219,6 +222,12 @@ When `SCRIBE_MODE` is `api`, defaults are `openai` / `openai`. When `local`, def
 
 Compatible services via `OPENAI_BASE_URL`: vLLM (`http://localhost:8000`), llama.cpp (`http://localhost:8080`), LiteLLM (`http://localhost:4000`), Together AI (`https://api.together.xyz`), Groq (`https://api.groq.com/openai`).
 
+## Transcript APIs
+
+Batch transcription endpoints continue to return the top-level `transcript` string for compatibility, and now also return a `transcriptDocument` object with normalized text, tokenized words, segments, and metadata.
+
+Use `POST /v1/transcripts/search` with either `transcript` or `transcriptDocument` plus a `query` string to get accent-insensitive matches with excerpts and timestamps where available.
+
 ### Anthropic
 
 | Variable | Description | Default |
@@ -240,6 +249,7 @@ Compatible services via `OPENAI_BASE_URL`: vLLM (`http://localhost:8000`), llama
 |----------|-------------|---------|
 | `OLLAMA_BASE_URL` | Ollama server URL | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Model name | `llama3.1:8b` |
+| `OLLAMA_TIMEOUT_MS` | Timeout for local Ollama note generation requests | `180000` |
 
 ### Deepgram
 
@@ -261,6 +271,7 @@ Compatible services via `OPENAI_BASE_URL`: vLLM (`http://localhost:8000`), llama
 |----------|-------------|---------|
 | `BERGET_API_KEY` | Berget API key | `""` |
 | `BERGET_BASE_URL` | Berget base URL | `https://api.berget.ai` |
+| `BERGET_NOTE_MODEL` | Berget note model | `openai/gpt-oss-120b` |
 | `BERGET_TRANSCRIBE_MODEL` | Transcription model | `KBLab/kb-whisper-large` |
 
 ### Local Whisper (whisper.cpp / faster-whisper)
@@ -398,7 +409,7 @@ open-medical-scribe/
 | OpenAI Whisper | `openai` | Cloud | `OPENAI_API_KEY` | Also works with OpenAI-compatible services via `OPENAI_BASE_URL`. |
 | Deepgram | `deepgram` | Cloud | `DEEPGRAM_API_KEY` | Nova-3 Medical model with smart formatting. |
 | Google Cloud Speech | `google` | Cloud | `GOOGLE_SPEECH_API_KEY` | Speech-to-Text v1. |
-| Berget AI | `berget` | Cloud | `BERGET_API_KEY` | EU sovereign infrastructure. Default model: `KBLab/kb-whisper-large`. |
+| Berget AI | `berget` | Cloud | `BERGET_API_KEY` | EU sovereign infrastructure. Default transcription model: `KBLab/kb-whisper-large`. Default note model: `openai/gpt-oss-120b`. |
 | CLI | `cli` | Custom | `CLI_TRANSCRIBE_COMMAND` | Run any external command for transcription. |
 | Mock | `mock` | Dev | None | Returns placeholder text for development. |
 

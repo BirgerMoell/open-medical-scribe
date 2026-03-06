@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { encodePcm16ToWav } from "../src/util/wav.js";
+import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { decodeAudioToFloat32, encodePcm16ToWav } from "../src/util/wav.js";
 
 describe("encodePcm16ToWav", () => {
   it("produces a valid WAV header for PCM16 mono 16kHz", () => {
@@ -34,5 +36,15 @@ describe("encodePcm16ToWav", () => {
     const pcm = Buffer.alloc(100);
     const wav = encodePcm16ToWav(pcm);
     assert.equal(wav.readUInt32LE(24), 16000);
+  });
+
+  it("decodes compressed audio to Float32 mono samples via ffmpeg", {
+    skip: spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status !== 0,
+  }, async () => {
+    const mp3 = readFileSync(new URL("./fixtures/sample_swedish.mp3", import.meta.url));
+    const samples = await decodeAudioToFloat32(mp3, 16000);
+
+    assert.ok(samples instanceof Float32Array);
+    assert.ok(samples.length > 16000);
   });
 });

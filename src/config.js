@@ -11,6 +11,12 @@ export function loadConfig(env) {
   return {
     port: parseInt(env.PORT || "8787", 10),
     scribeMode,
+    auth: {
+      bearerToken: env.API_BEARER_TOKEN || "",
+    },
+    http: {
+      maxRequestBytes: parseInt(env.MAX_REQUEST_BYTES || "67108864", 10),
+    },
     defaultNoteStyle: env.DEFAULT_NOTE_STYLE || "journal",
     defaultSpecialty: env.DEFAULT_SPECIALTY || "primary-care",
     defaultCountry: env.DEFAULT_COUNTRY || "",
@@ -40,6 +46,7 @@ export function loadConfig(env) {
     ollama: {
       baseUrl: env.OLLAMA_BASE_URL || "http://localhost:11434",
       model: env.OLLAMA_MODEL || "llama3.1:8b",
+      timeoutMs: parseInt(env.OLLAMA_TIMEOUT_MS || "180000", 10),
     },
     deepgram: {
       apiKey: env.DEEPGRAM_API_KEY || "",
@@ -53,6 +60,7 @@ export function loadConfig(env) {
       apiKey: env.BERGET_API_KEY || "",
       baseUrl: env.BERGET_BASE_URL || "https://api.berget.ai",
       transcribeModel: env.BERGET_TRANSCRIBE_MODEL || "KBLab/kb-whisper-large",
+      noteModel: env.BERGET_NOTE_MODEL || "openai/gpt-oss-120b",
     },
     whisper: {
       localCommand: env.WHISPER_LOCAL_COMMAND || "",
