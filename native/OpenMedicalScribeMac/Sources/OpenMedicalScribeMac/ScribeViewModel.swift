@@ -59,9 +59,15 @@ final class ScribeViewModel: ObservableObject {
     private var originalNoteDraft = ""
     private var pendingNoteRevisionTask: Task<Void, Never>?
 
-    init(noteArchive: NoteArchiveStore = NoteArchiveStore()) {
+    init(
+        noteArchive: NoteArchiveStore = NoteArchiveStore(),
+        launchContext: AppLaunchContext = .current
+    ) {
         self.noteArchive = noteArchive
-        self.savedEncounters = noteArchive.load()
+        self.savedEncounters = launchContext.isScreenshotMode ? [] : noteArchive.load()
+        if let scenario = launchContext.screenshotScenario {
+            applyScreenshotScenario(scenario)
+        }
     }
 
     var serviceStatusLabel: String {
@@ -717,6 +723,43 @@ final class ScribeViewModel: ObservableObject {
         }
     }
 
+    private func applyScreenshotScenario(_ scenario: ScreenshotScenario) {
+        let demo = ScreenshotDemo.fixture
+
+        executionMode = .remoteBackend
+        noteStyle = .journal
+        language = "sv"
+        locale = "sv-SE"
+        country = "SE"
+        backendURLString = "https://eir-scribe.se"
+        serviceIsReady = true
+        warnings = demo.currentEncounter.warnings
+        transcriptionProvider = demo.currentEncounter.transcriptionProvider
+        noteProvider = demo.currentEncounter.noteProvider
+        lastAction = "Demo state ready"
+        logs = demo.logs
+        savedEncounters = demo.encounters
+        loadSavedEncounter(demo.currentEncounter)
+
+        if scenario == .processing {
+            transcript = ""
+            setCurrentNoteDraft(
+                "",
+                originalNoteDraft: "",
+                isEdited: false,
+                encounterID: nil,
+                revisions: []
+            )
+            warnings = []
+            isBusy = true
+            activityTitle = "Preparing local models"
+            activityDetail = "Downloading Whisper and Qwen to this iPhone. The first run can take a few minutes."
+            transcriptionProvider = "WhisperKit"
+            noteProvider = "Qwen 3.5 MLX"
+            lastAction = "Preparing local models"
+        }
+    }
+
     private func setCurrentNoteDraft(
         _ noteDraft: String,
         originalNoteDraft: String,
@@ -866,6 +909,148 @@ final class ScribeViewModel: ObservableObject {
         ""
     }
 #endif
+}
+
+private struct ScreenshotDemo {
+    let encounters: [SavedEncounter]
+    let currentEncounter: SavedEncounter
+    let logs: [String]
+
+    static let fixture: ScreenshotDemo = {
+        let baseDate = Date(timeIntervalSince1970: 1_772_800_000)
+        let generatedDraft = """
+        Kontaktorsak
+        Patienten söker för tre dagars halsont, lätt feber och trötthet.
+
+        Status
+        AT gott. Temp 38,1. Rodnade tonsiller utan andningspåverkan. Ingen nackstelhet.
+
+        Bedömning
+        Bild förenlig med övre luftvägsinfektion utan alarmsymtom.
+
+        Plan
+        Vila, vätska, egenvård och åter vid försämring. CRP eller snabbtest endast vid tilltagande besvär.
+        """
+        let editedDraft = """
+        Kontaktorsak
+        Patienten söker för tre dagars halsont, lätt feber och trötthet.
+
+        Anamnes
+        Besvären började efter helgen. Ingen dyspné, inga sväljningssvårigheter och ingen tidigare allvarlig infektion senaste månaderna.
+
+        Status
+        AT gott. Temp 38,1. Rodnade tonsiller utan beläggningar. Ingen andningspåverkan. Ingen nackstelhet.
+
+        Bedömning
+        Bild förenlig med övre luftvägsinfektion utan alarmsymtom.
+
+        Plan
+        Vila, vätska och paracetamol vid behov. Egenvårdsråd givna. Ny kontakt vid försämring, andningsbesvär eller kvarstående feber.
+        """
+        let restoredDraft = """
+        Kontaktorsak
+        Patienten söker för tre dagars halsont, lätt feber och trötthet.
+
+        Anamnes
+        Besvären började efter helgen. Ingen dyspné eller sväljningssvårigheter.
+
+        Status
+        AT gott. Temp 38,1. Rodnade tonsiller utan beläggningar. Ingen andningspåverkan.
+
+        Bedömning
+        Trolig viral övre luftvägsinfektion.
+
+        Plan
+        Vätska, vila och åter vid försämring.
+        """
+        let transcript = """
+        Lakare: Vad kan jag hjalpa dig med idag?
+        Patient: Jag har haft ont i halsen sedan i mandags och kanner mig febrig.
+        Lakare: Har du haft andningssvarigheter eller svart att svalja?
+        Patient: Nej, mest ont och jag ar trott.
+        Lakare: Det later som en ovre luftvagsinfektion. Vi gar igenom egenvard och nar du ska soka igen.
+        """
+        let currentEncounter = SavedEncounter(
+            id: UUID(uuidString: "3D35D78E-CB0B-4F7F-9AFA-57D1C68AE001") ?? UUID(),
+            createdAt: baseDate,
+            sourceFileName: "besok-2026-03-06.m4a",
+            noteStyle: NoteStyle.journal.rawValue,
+            language: "sv",
+            locale: "sv-SE",
+            country: "SE",
+            transcript: transcript,
+            noteDraft: editedDraft,
+            originalNoteDraft: generatedDraft,
+            isEdited: true,
+            revisions: [
+                SavedEncounterRevision(
+                    id: UUID(uuidString: "3D35D78E-CB0B-4F7F-9AFA-57D1C68AE101") ?? UUID(),
+                    createdAt: baseDate,
+                    noteDraft: generatedDraft,
+                    kind: .generated
+                ),
+                SavedEncounterRevision(
+                    id: UUID(uuidString: "3D35D78E-CB0B-4F7F-9AFA-57D1C68AE102") ?? UUID(),
+                    createdAt: baseDate.addingTimeInterval(420),
+                    noteDraft: editedDraft,
+                    kind: .edited
+                ),
+                SavedEncounterRevision(
+                    id: UUID(uuidString: "3D35D78E-CB0B-4F7F-9AFA-57D1C68AE103") ?? UUID(),
+                    createdAt: baseDate.addingTimeInterval(840),
+                    noteDraft: restoredDraft,
+                    kind: .restored
+                ),
+                SavedEncounterRevision(
+                    id: UUID(uuidString: "3D35D78E-CB0B-4F7F-9AFA-57D1C68AE104") ?? UUID(),
+                    createdAt: baseDate.addingTimeInterval(1_080),
+                    noteDraft: editedDraft,
+                    kind: .edited
+                )
+            ],
+            warnings: [
+                "Verifiera duration och feberforlopp innan journalen signeras.",
+                "Kontrollera att egenvardsrad stammer med lokal rutin."
+            ],
+            transcriptionProvider: "Berget kb-whisper-large",
+            noteProvider: "Berget openai/gpt-oss-120b"
+        )
+        let followUpEncounter = SavedEncounter(
+            id: UUID(uuidString: "3D35D78E-CB0B-4F7F-9AFA-57D1C68AE002") ?? UUID(),
+            createdAt: baseDate.addingTimeInterval(-86_400),
+            sourceFileName: "uppfoljning-2026-03-05.m4a",
+            noteStyle: NoteStyle.journal.rawValue,
+            language: "sv",
+            locale: "sv-SE",
+            country: "SE",
+            transcript: "Uppfoljning efter blodtryckskontroll och justering av medicinering.",
+            noteDraft: """
+            Kontaktorsak
+            Uppfoljning av hypertoni.
+
+            Bedomning
+            Blodtrycket battre kontrollerat efter dosokning.
+
+            Plan
+            Fortsatt behandling och ny kontroll om 3 manader.
+            """,
+            warnings: [],
+            transcriptionProvider: "Berget kb-whisper-large",
+            noteProvider: "Berget openai/gpt-oss-120b"
+        )
+        let logs = [
+            "[2026-03-06T08:40:12Z] Connected to backend at https://eir-scribe.se",
+            "[2026-03-06T08:41:03Z] Recording started.",
+            "[2026-03-06T08:42:18Z] Saved recording as besok-2026-03-06.m4a.",
+            "[2026-03-06T08:42:19Z] Analyzed besok-2026-03-06.m4a with Berget kb-whisper-large + Berget openai/gpt-oss-120b"
+        ]
+
+        return ScreenshotDemo(
+            encounters: [currentEncounter, followUpEncounter],
+            currentEncounter: currentEncounter,
+            logs: logs
+        )
+    }()
 }
 
 enum NoteStyle: String, CaseIterable {

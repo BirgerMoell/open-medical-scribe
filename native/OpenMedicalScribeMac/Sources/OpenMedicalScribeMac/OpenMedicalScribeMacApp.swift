@@ -3,14 +3,22 @@ import UniformTypeIdentifiers
 
 @main
 struct OpenMedicalScribeMacApp: App {
-    @StateObject private var viewModel = ScribeViewModel()
+    @StateObject private var viewModel: ScribeViewModel
     @State private var importingAudio = false
+    private let launchContext: AppLaunchContext
+
+    init() {
+        let launchContext = AppLaunchContext.current
+        self.launchContext = launchContext
+        _viewModel = StateObject(wrappedValue: ScribeViewModel(launchContext: launchContext))
+    }
 
     var body: some Scene {
         WindowGroup(AppBrand.displayName) {
             ScribeRootView(
                 viewModel: viewModel,
-                importingAudio: $importingAudio
+                importingAudio: $importingAudio,
+                launchContext: launchContext
             )
             .fileImporter(
                 isPresented: $importingAudio,
@@ -42,6 +50,7 @@ private struct ScribeRootView: View {
 
     @ObservedObject var viewModel: ScribeViewModel
     @Binding var importingAudio: Bool
+    let launchContext: AppLaunchContext
     @State private var showingHistoryLibrary = false
     @State private var showingExportSheet = false
     @State private var showingVersionsSheet = false
@@ -51,6 +60,7 @@ private struct ScribeRootView: View {
     @State private var exportStatusMessage = ""
     @State private var exportStatusTask: Task<Void, Never>?
     @FocusState private var focusedField: EditorField?
+    @State private var appliedLaunchPresentation = false
 
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -94,6 +104,9 @@ private struct ScribeRootView: View {
             phonePrivacyPolicySheet
         }
 #endif
+        .onAppear {
+            applyLaunchPresentationIfNeeded()
+        }
 #if os(iOS)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -451,7 +464,9 @@ private struct ScribeRootView: View {
                 Text("The default on-device setup downloads roughly 3 GB on first use. Keep the iPhone on Wi-Fi and power while Whisper and Qwen finish downloading.")
             }
             .onAppear {
-                if !acceptedPrivacyNotice {
+                if launchContext.isScreenshotMode {
+                    acceptedPrivacyNotice = true
+                } else if !acceptedPrivacyNotice {
                     showingPrivacyNotice = true
                 }
             }
@@ -1430,6 +1445,25 @@ private struct ScribeRootView: View {
         focusedField = nil
     }
 
+    private func applyLaunchPresentationIfNeeded() {
+        guard !appliedLaunchPresentation else {
+            return
+        }
+
+        appliedLaunchPresentation = true
+
+        switch launchContext.screenshotScenario {
+        case .history:
+            showingHistoryLibrary = true
+        case .export:
+            presentExportSheet()
+        case .versions:
+            presentVersionsSheet()
+        case .processing, .main, .none:
+            break
+        }
+    }
+
     #if os(iOS)
     private var privacyPolicyURL: URL? {
         configuredURL(forInfoDictionaryKey: "EIRPrivacyPolicyURL")
@@ -1574,6 +1608,45 @@ private struct ScribeRootView: View {
 
 private enum AppBrand {
     static let displayName = "Eir Scribe"
+}
+
+struct AppLaunchContext {
+    let screenshotScenario: ScreenshotScenario?
+
+    static var current: AppLaunchContext {
+        AppLaunchContext(
+            screenshotScenario: ScreenshotScenario.from(arguments: ProcessInfo.processInfo.arguments)
+        )
+    }
+
+    var isScreenshotMode: Bool {
+        screenshotScenario != nil
+    }
+}
+
+enum ScreenshotScenario: String {
+    case main
+    case processing
+    case history
+    case export
+    case versions
+
+    static func from(arguments: [String]) -> ScreenshotScenario? {
+        for argument in arguments {
+            guard argument.hasPrefix("--screenshot-scene=") else {
+                continue
+            }
+
+            let rawValue = String(argument.dropFirst("--screenshot-scene=".count))
+            return ScreenshotScenario(rawValue: rawValue)
+        }
+
+        if arguments.contains("--app-store-screenshot") {
+            return .main
+        }
+
+        return nil
+    }
 }
 
 private enum AppTheme {
