@@ -12,7 +12,7 @@ const MIME_BY_EXT = {
   ".ico": "image/x-icon",
 };
 
-export function serveStaticFile(res, filePath) {
+export function serveStaticFile(res, filePath, { headOnly = false } = {}) {
   try {
     const fullPath = resolve(process.cwd(), filePath);
     const content = readFileSync(fullPath);
@@ -20,7 +20,7 @@ export function serveStaticFile(res, filePath) {
     res.statusCode = 200;
     res.setHeader("Content-Type", mime);
     res.setHeader("Content-Length", content.length);
-    res.end(content);
+    res.end(headOnly ? undefined : content);
     return true;
   } catch {
     return false;

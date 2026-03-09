@@ -169,6 +169,23 @@ test("GET /app serves the branded recorder web app", async () => {
   assert.match(res.text, /Cloud access is prepared automatically the first time you transcribe\./i);
 });
 
+test("GET /local-model-worker.js serves the browser local-model worker", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true }) });
+  const res = await invoke(app, { method: "GET", url: "/local-model-worker.js" });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.text, /CreateMLCEngine/);
+  assert.match(res.text, /automatic-speech-recognition/);
+});
+
+test("HEAD /site.css returns the branded stylesheet headers", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true }) });
+  const res = await invoke(app, { method: "HEAD", url: "/site.css" });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(String(res.headers["content-type"]), /text\/css/);
+});
+
 test("GET /privacy-policy.html serves the privacy page when web UI is enabled", async () => {
   const app = createApp({ config: baseConfig({ enableWebUi: true }) });
   const res = await invoke(app, { method: "GET", url: "/privacy-policy.html" });

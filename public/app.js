@@ -14,11 +14,21 @@ const noteStyleInput = document.getElementById("note-style");
 const languageInput = document.getElementById("language");
 const localeInput = document.getElementById("locale");
 const countryInput = document.getElementById("country");
+const modeCloudButton = document.getElementById("mode-cloud");
+const modeLocalButton = document.getElementById("mode-local");
+const modeDetail = document.getElementById("mode-detail");
+const runtimePill = document.getElementById("runtime-pill");
+const capabilityPill = document.getElementById("capability-pill");
 
 const STORAGE_KEYS = {
   installId: "eirScribe.installId",
   clientToken: "eirScribe.clientToken",
   quota: "eirScribe.clientQuota",
+  executionMode: "eirScribe.executionMode",
+};
+
+const DEFAULTS = {
+  mode: "cloud",
 };
 
 let mediaRecorder = null;
@@ -28,6 +38,14 @@ let recordedBlob = null;
 let recordingStartedAt = 0;
 let timerId = null;
 let isRecording = false;
+let localWorker = null;
+let workerRequestId = 0;
+const pendingWorkerRequests = new Map();
+
+const localCapability = {
+  webgpu: typeof navigator !== "undefined" && !!navigator.gpu,
+  mediaRecorder: typeof window !== "undefined" && typeof window.MediaRecorder !== "undefined",
+};
 
 recordButton.addEventListener("click", () => {
   if (isRecording) {
@@ -50,11 +68,62 @@ copyButton.addEventListener("click", async () => {
   }, 1500);
 });
 
+modeCloudButton.addEventListener("click", () => setExecutionMode("cloud"));
+modeLocalButton.addEventListener("click", () => setExecutionMode("local"));
+
 boot();
 
 function boot() {
-  providerPill.textContent = "Eir cloud";
   hydrateQuota();
+  setExecutionMode(localStorage.getItem(STORAGE_KEYS.executionMode) || DEFAULTS.mode, { persist: false });
+  updateCapabilityPill();
+}
+
+function setExecutionMode(mode, { persist = true } = {}) {
+  const normalizedMode = mode === "local" ? "local" : "cloud";
+  if (persist) {
+    localStorage.setItem(STORAGE_KEYS.executionMode, normalizedMode);
+  }
+
+  modeCloudButton.classList.toggle("is-active", normalizedMode === "cloud");
+  modeCloudButton.setAttribute("aria-pressed", String(normalizedMode === "cloud"));
+  modeLocalButton.classList.toggle("is-active", normalizedMode === "local");
+  modeLocalButton.setAttribute("aria-pressed", String(normalizedMode === "local"));
+
+  if (normalizedMode === "local") {
+    runtimePill.textContent = localCapability.webgpu ? "Local WebGPU" : "Local WASM";
+    modeDetail.textContent = localCapability.webgpu
+      ? "Runs in your browser. First use downloads Whisper and a compact Qwen model, then reuses the browser cache."
+      : "Runs in your browser. Whisper stays local, but without WebGPU the note falls back to a deterministic local template.";
+    if (!isRecording) {
+      statusLabel.textContent = "Ready";
+      statusDetail.textContent = localCapability.webgpu
+        ? "Local mode downloads models on first use, then transcribes and drafts in the browser."
+        : "Local mode transcribes in the browser. Without WebGPU, note drafting uses a local template.";
+    }
+  } else {
+    runtimePill.textContent = "Cloud default";
+    modeDetail.textContent =
+      "Cloud is the default. Eir servers in Stockholm handle transcription and drafting with zero Eir retention and Berget AI inference.";
+    if (!isRecording) {
+      statusLabel.textContent = "Ready";
+      statusDetail.textContent =
+        "Cloud access is prepared automatically the first time you transcribe.";
+    }
+  }
+}
+
+function getExecutionMode() {
+  return localStorage.getItem(STORAGE_KEYS.executionMode) || DEFAULTS.mode;
+}
+
+function updateCapabilityPill() {
+  if (localCapability.webgpu) {
+    capabilityPill.textContent = "WebGPU ready";
+    return;
+  }
+
+  capabilityPill.textContent = "WASM fallback";
 }
 
 async function startRecording() {
@@ -84,7 +153,7 @@ async function startRecording() {
     recordButton.classList.add("is-recording");
     recordingPill.textContent = "Recording";
     statusLabel.textContent = "Listening";
-    statusDetail.textContent = "Capture the encounter, then stop when you are ready for the cloud draft.";
+    statusDetail.textContent = "Capture the encounter, then stop when you are ready for transcription.";
     warningOutput.hidden = true;
   } catch (error) {
     statusLabel.textContent = "Microphone blocked";
@@ -101,8 +170,21 @@ function stopRecording() {
   stopTimer();
   recordButton.classList.remove("is-recording");
   recordingPill.textContent = "Processing";
-  statusLabel.textContent = "Preparing secure cloud access";
-  statusDetail.textContent = "Eir provisions a per-install trial token the first time you transcribe.";
+
+  if (getExecutionMode() === "local") {
+    updateStatus(
+      "Preparing local models",
+      localCapability.webgpu
+        ? "Eir is preparing browser-local Whisper and Qwen models."
+        : "Eir is preparing browser-local Whisper. Drafting will use a local template.",
+    );
+  } else {
+    updateStatus(
+      "Preparing secure cloud access",
+      "Eir provisions a per-install trial token the first time you transcribe.",
+    );
+  }
+
   mediaRecorder.stop();
 }
 
@@ -112,19 +194,78 @@ async function processRecording() {
   }
 
   try {
-    updateStatus("Preparing secure cloud access", "Provisioning a per-install client token on Eir servers in Sweden.");
-    const clientToken = await ensureClientToken();
-    updateStatus("Uploading recording", "Sending the encounter to Eir Scribe in Stockholm.");
-    const result = await requestScribe(clientToken);
-    renderResult(result);
-    updateStatus("Draft ready", "Review the note carefully before clinical use.");
+    if (getExecutionMode() === "local") {
+      await processLocally();
+    } else {
+      await processInCloud();
+    }
   } catch (error) {
     warningOutput.hidden = false;
-    warningOutput.textContent = error.message || "Cloud processing failed.";
-    updateStatus("Cloud processing failed", "Check the message below and try again.");
+    warningOutput.textContent = error.message || "Processing failed.";
+    updateStatus("Processing failed", "Check the message below and try again.");
     recordingPill.textContent = "Try again";
-    providerPill.textContent = "Cloud error";
+    providerPill.textContent = "Error";
   }
+}
+
+async function processLocally() {
+  const monoAudio = await decodeAudioBlobToMonoFloat32(recordedBlob, 16000);
+  quotaCard.hidden = true;
+  updateStatus("Preparing local transcription", "Loading local Whisper in the browser.");
+
+  const transcription = await sendWorkerRequest(
+    "transcribe",
+    {
+      audioBuffer: monoAudio.buffer,
+      supportsWebGPU: localCapability.webgpu,
+      language: (languageInput.value || "sv").trim(),
+    },
+    [monoAudio.buffer],
+  );
+
+  transcriptOutput.textContent = transcription.text || "No transcript returned.";
+  providerPill.textContent = transcription.providerLabel || "Local transcription";
+
+  updateStatus(
+    localCapability.webgpu ? "Preparing local note model" : "Preparing local note",
+    localCapability.webgpu
+      ? "Loading a compact local Qwen model in the browser."
+      : "Using a deterministic local note template because WebGPU is not available.",
+  );
+
+  const noteResult = await sendWorkerRequest("draft-note", {
+    transcript: transcription.text || "",
+    noteStyle: noteStyleInput.value || "journal",
+    locale: (localeInput.value || "sv-SE").trim(),
+    language: (languageInput.value || "sv").trim(),
+    supportsWebGPU: localCapability.webgpu,
+  });
+
+  renderResult({
+    transcript: transcription.text,
+    noteDraft: noteResult.noteDraft,
+    warnings: noteResult.warning ? [noteResult.warning] : [],
+    providers: {
+      transcription: transcription.providerLabel,
+      note: noteResult.providerLabel,
+    },
+  });
+
+  updateStatus(
+    "Local draft ready",
+    localCapability.webgpu
+      ? "Review the browser-local draft carefully before clinical use."
+      : "Review the local template draft carefully before clinical use.",
+  );
+}
+
+async function processInCloud() {
+  updateStatus("Preparing secure cloud access", "Provisioning a per-install client token on Eir servers in Sweden.");
+  const clientToken = await ensureClientToken();
+  updateStatus("Uploading recording", "Sending the encounter to Eir Scribe in Stockholm.");
+  const result = await requestScribe(clientToken);
+  renderResult(result);
+  updateStatus("Draft ready", "Review the note carefully before clinical use.");
 }
 
 async function ensureClientToken() {
@@ -204,7 +345,10 @@ function renderResult(result) {
   noteOutput.textContent = result.noteDraft || "No note draft returned.";
   copyButton.disabled = !result.noteDraft;
   copyButton.textContent = "Copy";
-  providerPill.textContent = `${result.providers?.transcription || "cloud"} + ${result.providers?.note || "cloud"}`;
+
+  const txProvider = result.providers?.transcription || "cloud";
+  const noteProvider = result.providers?.note || "cloud";
+  providerPill.textContent = `${txProvider} + ${noteProvider}`;
 
   const warnings = Array.isArray(result.warnings) ? result.warnings.filter(Boolean) : [];
   if (warnings.length) {
@@ -243,6 +387,11 @@ function persistQuota(quota) {
 }
 
 function renderQuota(quota) {
+  if (getExecutionMode() === "local") {
+    quotaCard.hidden = true;
+    return;
+  }
+
   quotaCard.hidden = false;
   const remainingMinutes = Math.max(0, Math.floor((quota.remaining?.audioSeconds || 0) / 60));
   const remainingRequests = quota.remaining?.requests ?? 0;
@@ -312,4 +461,76 @@ function stopMediaStream() {
     track.stop();
   }
   mediaStream = null;
+}
+
+async function decodeAudioBlobToMonoFloat32(blob, targetSampleRate) {
+  const buffer = await blob.arrayBuffer();
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextCtor) {
+    throw new Error("This browser cannot decode recorded audio for local transcription.");
+  }
+
+  const audioContext = new AudioContextCtor();
+  const decoded = await audioContext.decodeAudioData(buffer.slice(0));
+  const offlineContext = new OfflineAudioContext(
+    1,
+    Math.max(1, Math.ceil(decoded.duration * targetSampleRate)),
+    targetSampleRate,
+  );
+  const source = offlineContext.createBufferSource();
+  source.buffer = decoded;
+  source.connect(offlineContext.destination);
+  source.start(0);
+  const rendered = await offlineContext.startRendering();
+  await audioContext.close();
+  return new Float32Array(rendered.getChannelData(0));
+}
+
+function ensureWorker() {
+  if (localWorker) {
+    return localWorker;
+  }
+
+  localWorker = new Worker("/local-model-worker.js", { type: "module" });
+  localWorker.addEventListener("message", handleWorkerMessage);
+  return localWorker;
+}
+
+function handleWorkerMessage(event) {
+  const message = event.data || {};
+
+  if (message.type === "progress") {
+    const payload = message.payload || {};
+    updateStatus(payload.title || "Preparing local models", payload.detail || "");
+    providerPill.textContent = payload.stage === "local-note"
+      ? "Local note model"
+      : "Local transcription";
+    if (typeof payload.progress === "number") {
+      recordingPill.textContent = `${Math.round(payload.progress * 100)}%`;
+    }
+    return;
+  }
+
+  const pending = pendingWorkerRequests.get(message.id);
+  if (!pending) {
+    return;
+  }
+
+  pendingWorkerRequests.delete(message.id);
+
+  if (message.type === "result") {
+    pending.resolve(message.payload);
+    return;
+  }
+
+  pending.reject(new Error(message.error || "Local worker failed."));
+}
+
+function sendWorkerRequest(type, payload, transfer = []) {
+  return new Promise((resolve, reject) => {
+    const worker = ensureWorker();
+    const id = ++workerRequestId;
+    pendingWorkerRequests.set(id, { resolve, reject });
+    worker.postMessage({ id, type, payload }, transfer);
+  });
 }

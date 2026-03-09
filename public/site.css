@@ -734,7 +734,56 @@ li {
   border-radius: 8px;
 }
 
+.app-mode-card {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(232, 230, 225, 0.94);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-soft);
+}
+
+.app-mode-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(245, 244, 240, 0.92);
+}
+
+.app-mode-button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sand-600);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-mode-button.is-active {
+  background: linear-gradient(135deg, rgba(30, 148, 168, 0.12), rgba(212, 167, 106, 0.22));
+  color: var(--sand-900);
+  box-shadow: inset 0 0 0 1px rgba(30, 148, 168, 0.1);
+}
+
+.app-mode-detail {
+  margin: 12px 0 0;
+  color: var(--sand-600);
+  line-height: 1.6;
+}
+
 .app-recorder-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.app-runtime-strip {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;

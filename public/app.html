@@ -58,6 +58,21 @@
                 <dd>Per-install trial</dd>
               </div>
             </dl>
+
+            <div class="app-mode-card" aria-label="Execution mode">
+              <div class="app-mode-toggle" role="tablist" aria-label="Execution mode">
+                <button type="button" class="app-mode-button is-active" id="mode-cloud" aria-pressed="true">
+                  Cloud
+                </button>
+                <button type="button" class="app-mode-button" id="mode-local" aria-pressed="false">
+                  Local beta
+                </button>
+              </div>
+              <p class="app-mode-detail" id="mode-detail">
+                Cloud is the default. Eir servers in Stockholm handle transcription and drafting with zero Eir
+                retention and Berget AI inference.
+              </p>
+            </div>
           </div>
 
           <div class="app-recorder-card">
@@ -69,6 +84,11 @@
             <p class="capture-meta" id="app-status-detail">
               Cloud access is prepared automatically the first time you transcribe.
             </p>
+
+            <div class="app-runtime-strip">
+              <span class="status-pill" id="runtime-pill">Cloud default</span>
+              <span class="status-pill muted" id="capability-pill">WebGPU checking</span>
+            </div>
 
             <button type="button" class="app-record-button" id="record-btn" aria-label="Start recording">
               <span class="app-record-ring"></span>

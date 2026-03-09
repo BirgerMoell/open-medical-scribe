@@ -28,6 +28,9 @@ export function createApp({ config }) {
   return {
     async handler(req, res) {
       try {
+        const isGetOrHead = req.method === "GET" || req.method === "HEAD";
+        const staticOptions = { headOnly: req.method === "HEAD" };
+
         if (req.method === "GET" && req.url === "/health") {
           return jsonResponse(res, 200, {
             ok: true,
@@ -204,52 +207,56 @@ export function createApp({ config }) {
           return jsonResponse(res, 200, resource);
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/") {
-          if (serveStaticFile(res, "public/index.html")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/") {
+          if (serveStaticFile(res, "public/index.html", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/app") {
-          if (serveStaticFile(res, "public/app.html")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/app") {
+          if (serveStaticFile(res, "public/app.html", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/app.js") {
-          if (serveStaticFile(res, "public/app.js")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/app.js") {
+          if (serveStaticFile(res, "public/app.js", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/styles.css") {
-          if (serveStaticFile(res, "public/styles.css")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/local-model-worker.js") {
+          if (serveStaticFile(res, "public/local-model-worker.js", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/site.css") {
-          if (serveStaticFile(res, "public/site.css")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/styles.css") {
+          if (serveStaticFile(res, "public/styles.css", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/site.js") {
-          if (serveStaticFile(res, "public/site.js")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/site.css") {
+          if (serveStaticFile(res, "public/site.css", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/stream.js") {
-          if (serveStaticFile(res, "public/stream.js")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/site.js") {
+          if (serveStaticFile(res, "public/site.js", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url.startsWith("/brand/")) {
-          if (serveStaticFile(res, `public${req.url}`)) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/stream.js") {
+          if (serveStaticFile(res, "public/stream.js", staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/privacy-policy.html") {
-          if (serveStaticFile(res, "docs/privacy-policy.html")) return;
+        if (config.enableWebUi && isGetOrHead && req.url.startsWith("/brand/")) {
+          if (serveStaticFile(res, `public${req.url}`, staticOptions)) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/support.html") {
-          if (serveStaticFile(res, "docs/support.html")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/privacy-policy.html") {
+          if (serveStaticFile(res, "docs/privacy-policy.html", staticOptions)) return;
         }
 
-        if (config.enableWebUi && config.enableSettingsUi && req.method === "GET" && req.url === "/settings") {
-          if (serveStaticFile(res, "public/settings.html")) return;
+        if (config.enableWebUi && isGetOrHead && req.url === "/support.html") {
+          if (serveStaticFile(res, "docs/support.html", staticOptions)) return;
         }
 
-        if (config.enableWebUi && config.enableSettingsUi && req.method === "GET" && req.url === "/settings.js") {
-          if (serveStaticFile(res, "public/settings.js")) return;
+        if (config.enableWebUi && config.enableSettingsUi && isGetOrHead && req.url === "/settings") {
+          if (serveStaticFile(res, "public/settings.html", staticOptions)) return;
+        }
+
+        if (config.enableWebUi && config.enableSettingsUi && isGetOrHead && req.url === "/settings.js") {
+          if (serveStaticFile(res, "public/settings.js", staticOptions)) return;
         }
 
         return jsonResponse(res, 404, { error: "Not Found" });
