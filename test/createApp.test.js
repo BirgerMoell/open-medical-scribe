@@ -158,6 +158,9 @@ test("GET / serves the public landing page when web UI is enabled", async () => 
   assert.equal(res.statusCode, 200);
   assert.match(res.text, /Eir Scribe/);
   assert.match(res.text, /Sweden-hosted cloud path/i);
+  assert.match(res.text, /href="\/app"/);
+  assert.match(res.text, /og:image/);
+  assert.match(res.text, /eir-scribe-social-preview\.png/);
 });
 
 test("GET /app serves the branded recorder web app", async () => {
