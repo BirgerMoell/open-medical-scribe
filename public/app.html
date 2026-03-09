@@ -3,46 +3,152 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Eir Scribe Recorder</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>Eir Scribe App</title>
+    <meta
+      name="description"
+      content="Record a clinical conversation, prepare secure cloud access automatically, and receive a journal-ready draft in Eir Scribe."
+    />
+    <meta name="theme-color" content="#FAFAF7" />
+    <link rel="icon" type="image/png" href="/brand/eir-icon-teal.png" />
+    <link rel="stylesheet" href="/site.css" />
   </head>
-  <body>
-    <a href="/settings" class="gear" aria-label="Settings">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </a>
+  <body class="app-page">
+    <div class="site-shell app-shell">
+      <header class="topbar">
+        <a class="brand-lockup" href="/" aria-label="Eir Scribe home">
+          <img src="/brand/eir-icon-teal.png" alt="" width="40" height="40" />
+          <div>
+            <span class="brand-eyebrow">Eir Scribe</span>
+            <span class="brand-subline">Secure cloud recorder</span>
+          </div>
+        </a>
 
-    <main>
-      <p class="brand">Eir Scribe</p>
+        <nav class="topnav app-topnav" aria-label="App links">
+          <a href="/privacy-policy.html">Privacy</a>
+          <a href="/support.html">Support</a>
+          <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a>
+        </nav>
+      </header>
 
-      <div class="recorder">
-        <button type="button" id="record-btn" class="rec" aria-label="Start recording">
-          <span class="rec-icon"></span>
-        </button>
-        <div class="rec-status">
-          <span id="rec-dot" class="dot"></span>
-          <span id="rec-label">Tap to record</span>
-        </div>
-      </div>
+      <main class="app-main">
+        <section class="app-hero" data-reveal>
+          <div class="app-hero-copy">
+            <p class="kicker">Recorder first</p>
+            <h1>One recording. One secure cloud draft.</h1>
+            <p class="hero-lead">
+              Record the encounter, let Eir provision secure cloud access in the background, and review a
+              Swedish-first draft note shaped for clinician sign-off.
+            </p>
 
-      <section id="transcript-section" class="section" hidden>
-        <p class="label">Transcript</p>
-        <div id="transcript" class="transcript"></div>
-        <p id="tx-model" class="model-info"></p>
-      </section>
+            <dl class="trust-strip app-trust-strip" aria-label="Cloud properties">
+              <div>
+                <dt>Region</dt>
+                <dd>Stockholm</dd>
+              </div>
+              <div>
+                <dt>Retention</dt>
+                <dd>Zero Eir retention</dd>
+              </div>
+              <div>
+                <dt>Inference</dt>
+                <dd>Berget AI</dd>
+              </div>
+              <div>
+                <dt>Token</dt>
+                <dd>Per-install trial</dd>
+              </div>
+            </dl>
+          </div>
 
-      <section id="note-section" class="section" hidden>
-        <div class="note-head">
-          <p class="label">Draft Note</p>
-          <button type="button" id="copy-btn" class="copy">Copy</button>
-        </div>
-        <p id="note-status" class="note-status"></p>
-        <pre id="note" class="note"></pre>
-        <p id="note-model" class="model-info"></p>
-      </section>
-    </main>
+          <div class="app-recorder-card">
+            <div class="capture-mark">
+              <img src="/brand/eir-icon-teal.png" alt="" width="34" height="34" />
+            </div>
+
+            <p class="capture-label" id="app-status-label">Ready</p>
+            <p class="capture-meta" id="app-status-detail">
+              Cloud access is prepared automatically the first time you transcribe.
+            </p>
+
+            <button type="button" class="app-record-button" id="record-btn" aria-label="Start recording">
+              <span class="app-record-ring"></span>
+              <span class="app-record-core">
+                <span class="app-record-icon"></span>
+              </span>
+            </button>
+
+            <div class="app-recorder-footer">
+              <span class="status-pill" id="recording-pill">Tap to record</span>
+              <span class="status-pill muted" id="timer-pill">00:00</span>
+            </div>
+
+            <details class="app-advanced">
+              <summary>Advanced</summary>
+              <div class="app-advanced-grid">
+                <label>
+                  <span>Note style</span>
+                  <select id="note-style">
+                    <option value="journal" selected>Journal</option>
+                    <option value="soap">SOAP</option>
+                    <option value="progress">Progress</option>
+                    <option value="hp">H&amp;P</option>
+                    <option value="dap">DAP</option>
+                    <option value="procedure">Procedure</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Language</span>
+                  <input id="language" type="text" value="sv" autocomplete="off" />
+                </label>
+                <label>
+                  <span>Locale</span>
+                  <input id="locale" type="text" value="sv-SE" autocomplete="off" />
+                </label>
+                <label>
+                  <span>Country</span>
+                  <input id="country" type="text" value="SE" autocomplete="off" />
+                </label>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="app-results" data-reveal>
+          <article class="app-panel app-panel-transcript">
+            <div class="app-panel-head">
+              <div>
+                <p class="section-kicker">Transcript</p>
+                <h2>Conversation</h2>
+              </div>
+              <span class="status-pill muted" id="provider-pill">Waiting</span>
+            </div>
+            <div class="app-panel-body" id="transcript-output">
+              The transcript will appear here after you stop recording.
+            </div>
+          </article>
+
+          <article class="app-panel app-panel-note">
+            <div class="app-panel-head">
+              <div>
+                <p class="section-kicker">Draft note</p>
+                <h2>Clinician review required</h2>
+              </div>
+              <button type="button" class="button button-secondary app-copy-button" id="copy-btn" disabled>
+                Copy
+              </button>
+            </div>
+            <div class="app-panel-body app-note-output" id="note-output">
+              Your draft note will appear here.
+            </div>
+            <p class="app-warning" id="warning-output" hidden></p>
+            <div class="app-quota" id="quota-card" hidden>
+              <p class="section-kicker">Trial quota</p>
+              <p id="quota-output">Remaining quota will appear here when available.</p>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
 
     <script type="module" src="/app.js"></script>
   </body>

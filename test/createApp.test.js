@@ -160,6 +160,31 @@ test("GET / serves the public landing page when web UI is enabled", async () => 
   assert.match(res.text, /Sweden-hosted cloud path/i);
 });
 
+test("GET /app serves the branded recorder web app", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true }) });
+  const res = await invoke(app, { method: "GET", url: "/app" });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.text, /One recording\. One secure cloud draft\./);
+  assert.match(res.text, /Cloud access is prepared automatically the first time you transcribe\./i);
+});
+
+test("GET /privacy-policy.html serves the privacy page when web UI is enabled", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true }) });
+  const res = await invoke(app, { method: "GET", url: "/privacy-policy.html" });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.text, /Privacy Policy/);
+});
+
+test("GET /support.html serves the support page when web UI is enabled", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true }) });
+  const res = await invoke(app, { method: "GET", url: "/support.html" });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.text, /Support/);
+});
+
 test("GET /settings is hidden when settings UI is disabled", async () => {
   const app = createApp({ config: baseConfig({ enableWebUi: true, enableSettingsUi: false }) });
   const res = await invoke(app, { method: "GET", url: "/settings" });

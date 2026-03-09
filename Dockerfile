@@ -11,6 +11,7 @@ RUN npm ci --omit=dev
 
 COPY src ./src
 COPY public ./public
+COPY docs ./docs
 COPY scripts ./scripts
 
 EXPOSE 8787

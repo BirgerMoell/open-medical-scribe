@@ -10,5 +10,4 @@ native
 electron
 data
 test
-docs
 *.log
