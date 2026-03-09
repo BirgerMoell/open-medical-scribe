@@ -67,13 +67,6 @@ final class ScribeViewModel: ObservableObject {
         self.savedEncounters = launchContext.isScreenshotMode ? [] : noteArchive.load()
 #if os(iOS)
         migrateLegacyBackendURLIfNeeded()
-        if KeychainSecretStore.load(account: KeychainSecretStore.backendAPITokenAccount).isEmpty,
-           !PlatformDefaults.defaultBackendAPITokenString.isEmpty {
-            KeychainSecretStore.save(
-                PlatformDefaults.defaultBackendAPITokenString,
-                account: KeychainSecretStore.backendAPITokenAccount
-            )
-        }
 #endif
         if let scenario = launchContext.screenshotScenario {
             applyScreenshotScenario(scenario)
@@ -314,18 +307,6 @@ final class ScribeViewModel: ObservableObject {
                     )
                 }
 
-                let backendBearerToken = preferredBackendBearerToken()
-                if requiresBackendBearerToken(baseURL), backendBearerToken.isEmpty {
-                    throw NSError(
-                        domain: "OpenMedicalScribeApple",
-                        code: 64,
-                        userInfo: [
-                            NSLocalizedDescriptionKey:
-                                "This Eir cloud backend requires a Backend API Token. Open Settings and paste the token into the 'Backend API Token' field."
-                        ]
-                    )
-                }
-
 #if os(iOS)
                 if baseURL.isFileURL == false, isLoopbackBackendURL(baseURL) {
                     throw NSError(
@@ -338,6 +319,8 @@ final class ScribeViewModel: ObservableObject {
                     )
                 }
 #endif
+
+                let backendBearerToken = try await resolvedBackendBearerToken(for: baseURL)
 
                 result = try await client.scribeAudio(
                     baseURL: baseURL,
@@ -921,14 +904,83 @@ final class ScribeViewModel: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func preferredBackendBearerToken() -> String {
+    private func preferredManualBackendBearerToken() -> String {
         KeychainSecretStore
             .load(account: KeychainSecretStore.backendAPITokenAccount)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    private func preferredCloudClientBearerToken() -> String {
+        KeychainSecretStore
+            .load(account: KeychainSecretStore.cloudClientTokenAccount)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func preferredBackendBearerToken() -> String {
+        let manual = preferredManualBackendBearerToken()
+        if !manual.isEmpty {
+            return manual
+        }
+
+        return preferredCloudClientBearerToken()
+    }
+
+    private func resolvedBackendBearerToken(for baseURL: URL) async throws -> String {
+        if !requiresBackendBearerToken(baseURL) {
+            return ""
+        }
+
+        let existing = preferredBackendBearerToken()
+        if !existing.isEmpty {
+            return existing
+        }
+
+        return try await bootstrapCloudClientAccess(baseURL: baseURL)
+    }
+
+    private func bootstrapCloudClientAccess(baseURL: URL) async throws -> String {
+        updateActivity(
+            title: "Preparing secure cloud access",
+            detail: "Creating a per-device trial token on Eir servers in Sweden."
+        )
+
+        let context = await CloudBootstrapper.currentContext()
+        let bootstrap = try await client.bootstrapCloudClient(
+            baseURL: baseURL,
+            installID: context.installID,
+            platform: context.platform,
+            attestation: context.attestation
+        )
+
+        let token = bootstrap.bearerToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty else {
+            throw NSError(
+                domain: "OpenMedicalScribeApple",
+                code: 65,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Secure cloud access setup completed without a usable client token."
+                ]
+            )
+        }
+
+        KeychainSecretStore.save(token, account: KeychainSecretStore.cloudClientTokenAccount)
+        log(
+            "Provisioned secure cloud client \(bootstrap.clientId) with \(bootstrap.quota.remaining.requests) trial requests remaining."
+        )
+        return token
+    }
 #else
+    private func preferredManualBackendBearerToken() -> String {
+        ""
+    }
+
     private func preferredBackendBearerToken() -> String {
         ""
+    }
+
+    private func resolvedBackendBearerToken(for _: URL) async throws -> String {
+        preferredBackendBearerToken()
     }
 #endif
 

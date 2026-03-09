@@ -16,6 +16,16 @@ export function loadConfig(env) {
     auth: {
       bearerToken: env.API_BEARER_TOKEN || "",
     },
+    clientAccess: {
+      stateFile: env.CLIENT_AUTH_STATE_FILE || "data/client-access.json",
+      trialMaxRequests: parseInt(env.CLIENT_TRIAL_MAX_REQUESTS || "20", 10),
+      trialMaxAudioSeconds: parseInt(env.CLIENT_TRIAL_MAX_AUDIO_SECONDS || String(20 * 60), 10),
+      trialMaxEstimatedCostUsd: parseFloat(env.CLIENT_TRIAL_MAX_ESTIMATED_COST_USD || "2.5"),
+      bootstrapPerIpPerHour: parseInt(env.CLIENT_BOOTSTRAP_PER_IP_PER_HOUR || "10", 10),
+      bootstrapPerInstallPerDay: parseInt(env.CLIENT_BOOTSTRAP_PER_INSTALL_PER_DAY || "3", 10),
+      estimatedCostPerAudioMinuteUsd: parseFloat(env.CLIENT_ESTIMATED_COST_PER_AUDIO_MINUTE_USD || "0.08"),
+      requireAttestation: String(env.CLIENT_REQUIRE_ATTESTATION || "false").toLowerCase() === "true",
+    },
     settings: {
       file: env.SETTINGS_FILE || "data/settings.json",
       writeEnabled: String(env.ENABLE_SETTINGS_WRITE || "true").toLowerCase() !== "false",

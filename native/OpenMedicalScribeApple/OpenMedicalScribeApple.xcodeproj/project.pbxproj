@@ -19,6 +19,7 @@
 		38EFB004444CB43600C329A9 /* LocalBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */; };
 		3AFEEB0257F8BB85734A9DC9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 69C3F922450945203E7D8712 /* Assets.xcassets */; };
 		3B5E38EAC3C98A469DBE371B /* SavedEncounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE7CCABEDB65CC67006D114 /* SavedEncounter.swift */; };
+		3BCC182E1FF242DE61267A4C /* CloudBootstrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6109C0FE29C403B28A4DC053 /* CloudBootstrapper.swift */; };
 		3DEA8DA8150CAB00DD26F31C /* ScribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CCDF9469679365554C3FD4 /* ScribeClient.swift */; };
 		46BECB1411BC29CA47E1B955 /* SavedEncounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE7CCABEDB65CC67006D114 /* SavedEncounter.swift */; };
 		47AD6365329818EE9054DF61 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DDDB3B674266C4DA3B34922C /* PrivacyInfo.xcprivacy */; };
@@ -31,6 +32,7 @@
 		85C43B427E3F227C233333EC /* EncounterExportFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */; };
 		90C4C12169D83A24E0C8D778 /* LocalBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */; };
 		94862102F7A3902E34AB4CD7 /* KeychainSecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C05C281B4AD4CBB942DE32 /* KeychainSecretStore.swift */; };
+		96441C9D3DFEDA15BE426679 /* CloudBootstrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6109C0FE29C403B28A4DC053 /* CloudBootstrapper.swift */; };
 		998F4BFAB97A302A0046EA05 /* ClipboardWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E906B979AC27E06AEF1494 /* ClipboardWriter.swift */; };
 		B0FFF584778AB8AF04A35D35 /* NoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C63A46820BAD53BA761FE0 /* NoteArchiveStore.swift */; };
 		B2680AA62ECCD39208D6C11C /* BergetScribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */; };
@@ -51,6 +53,7 @@
 		4548F4620F9B727577C739ED /* ScribeExecutionMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScribeExecutionMode.swift; sourceTree = "<group>"; };
 		4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BergetScribeClient.swift; sourceTree = "<group>"; };
 		4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncounterExportFormatter.swift; sourceTree = "<group>"; };
+		6109C0FE29C403B28A4DC053 /* CloudBootstrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBootstrapper.swift; sourceTree = "<group>"; };
 		69C3F922450945203E7D8712 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		77C63A46820BAD53BA761FE0 /* NoteArchiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteArchiveStore.swift; sourceTree = "<group>"; };
 		819DF179DE2861FDBFFA6E6C /* OpenMedicalScribeMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenMedicalScribeMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,6 +87,7 @@
 			children = (
 				4A754A083CFCFDFEEB35F430 /* BergetScribeClient.swift */,
 				40E906B979AC27E06AEF1494 /* ClipboardWriter.swift */,
+				6109C0FE29C403B28A4DC053 /* CloudBootstrapper.swift */,
 				4A8356F16CC7368F22803CC3 /* EncounterExportFormatter.swift */,
 				97C05C281B4AD4CBB942DE32 /* KeychainSecretStore.swift */,
 				42867E7D64C98AF27F36ED7A /* LocalBackendManager.swift */,
@@ -238,6 +242,7 @@
 			files = (
 				BF0E196CEB8FC3F111C13693 /* BergetScribeClient.swift in Sources */,
 				7D5EF6DFDB443B9DC544FE30 /* ClipboardWriter.swift in Sources */,
+				3BCC182E1FF242DE61267A4C /* CloudBootstrapper.swift in Sources */,
 				85C43B427E3F227C233333EC /* EncounterExportFormatter.swift in Sources */,
 				2D4A46598B1235E7BFD8B1F0 /* KeychainSecretStore.swift in Sources */,
 				38EFB004444CB43600C329A9 /* LocalBackendManager.swift in Sources */,
@@ -259,6 +264,7 @@
 			files = (
 				B2680AA62ECCD39208D6C11C /* BergetScribeClient.swift in Sources */,
 				998F4BFAB97A302A0046EA05 /* ClipboardWriter.swift in Sources */,
+				96441C9D3DFEDA15BE426679 /* CloudBootstrapper.swift in Sources */,
 				08055144F59F3F56603F4B6D /* EncounterExportFormatter.swift in Sources */,
 				94862102F7A3902E34AB4CD7 /* KeychainSecretStore.swift in Sources */,
 				90C4C12169D83A24E0C8D778 /* LocalBackendManager.swift in Sources */,
@@ -334,7 +340,7 @@
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				OMS_DEFAULT_BACKEND_API_TOKEN = WLBzfzO8X8afGkNyBoDwUiYZfS0jQseVX4wtIkALvdSaEESBQRuKI0G/kbrDDr8N;
+				OMS_DEFAULT_BACKEND_API_TOKEN = "";
 				OMS_DEFAULT_BACKEND_URL = "https://scribe.eir.space";
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "Eir Scribe";

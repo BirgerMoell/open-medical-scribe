@@ -16,6 +16,32 @@ struct ScribeClient {
         }
     }
 
+    func bootstrapCloudClient(
+        baseURL: URL,
+        installID: String,
+        platform: String,
+        attestation: CloudBootstrapAttestation
+    ) async throws -> CloudBootstrapResponse {
+        var request = URLRequest(url: baseURL.appending(path: "v1/client/bootstrap"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 20
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            CloudBootstrapRequest(
+                installId: installID,
+                platform: platform,
+                attestation: attestation
+            )
+        )
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw backendError(data: data, fallback: "Secure cloud access setup failed.")
+        }
+
+        return try JSONDecoder().decode(CloudBootstrapResponse.self, from: data)
+    }
+
     func scribeAudio(
         baseURL: URL,
         bearerToken: String = "",
@@ -46,10 +72,7 @@ struct ScribeClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "OpenMedicalScribeMac", code: 2, userInfo: [
-                NSLocalizedDescriptionKey: "Scribe request failed: \(body)"
-            ])
+            throw backendError(data: data, fallback: "Scribe request failed.")
         }
 
         return try JSONDecoder().decode(AppScribeResult.self, from: data)
@@ -90,6 +113,28 @@ struct ScribeClient {
 
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
+
+    private func backendError(data: Data, fallback: String) -> NSError {
+        if let payload = try? JSONDecoder().decode(BackendErrorPayload.self, from: data) {
+            var description = payload.error.trimmingCharacters(in: .whitespacesAndNewlines)
+            if description.isEmpty {
+                description = fallback
+            }
+
+            if let quota = payload.quota {
+                description += " Remaining trial audio: \(Int(quota.remaining.audioSeconds / 60)) min."
+            }
+
+            return NSError(domain: "OpenMedicalScribeMac", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: description
+            ])
+        }
+
+        let body = String(data: data, encoding: .utf8) ?? fallback
+        return NSError(domain: "OpenMedicalScribeMac", code: 2, userInfo: [
+            NSLocalizedDescriptionKey: "\(fallback) \(body)"
+        ])
+    }
 }
 
 private struct EncounterRequest: Encodable {
@@ -100,4 +145,47 @@ private struct EncounterRequest: Encodable {
     let country: String
     let noteStyle: String
     let specialty: String
+}
+
+private struct CloudBootstrapRequest: Encodable {
+    let installId: String
+    let platform: String
+    let attestation: CloudBootstrapAttestation
+}
+
+struct CloudBootstrapResponse: Decodable, Sendable {
+    struct Quota: Decodable, Sendable {
+        struct UsageBlock: Decodable, Sendable {
+            let requests: Int
+            let audioSeconds: Int
+            let estimatedCostUsd: Double
+        }
+
+        let used: UsageBlock
+        let limits: UsageBlock
+        let remaining: UsageBlock
+    }
+
+    let clientId: String
+    let bearerToken: String
+    let mode: String
+    let quota: Quota
+}
+
+private struct BackendErrorPayload: Decodable {
+    struct Quota: Decodable {
+        struct UsageBlock: Decodable {
+            let requests: Int
+            let audioSeconds: Int
+            let estimatedCostUsd: Double
+        }
+
+        let used: UsageBlock
+        let limits: UsageBlock
+        let remaining: UsageBlock
+    }
+
+    let error: String
+    let code: String?
+    let quota: Quota?
 }

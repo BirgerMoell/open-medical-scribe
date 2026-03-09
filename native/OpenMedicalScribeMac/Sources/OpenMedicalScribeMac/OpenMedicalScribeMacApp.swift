@@ -893,11 +893,11 @@ private struct ScribeRootView: View {
                         .keyboardType(.URL)
                         .textContentType(.URL)
 
-                    Text("Default cloud processing uses Eir servers in Sweden with zero Eir-side data retention. Berget AI handles transcription and note inference. The Eir backend also requires a Backend API Token.")
+                    Text("Default cloud processing uses Eir servers in Sweden with zero Eir-side data retention. On first use, the app quietly provisions a per-device trial token from Eir. Berget AI handles transcription and note inference.")
                         .font(.system(size: 12, weight: .regular, design: .default))
                         .foregroundStyle(.secondary)
 
-                    SecureField("Backend API Token (optional)", text: $backendAPIToken)
+                    SecureField("Operator Backend Token (advanced)", text: $backendAPIToken)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .onChange(of: backendAPIToken) { _, newValue in
@@ -920,7 +920,7 @@ private struct ScribeRootView: View {
                                 )
                             }
 
-                        Text("Stored in the iPhone Keychain and sent directly to api.berget.ai, not through your backend.")
+                        Text("Stored in the iPhone Keychain and sent directly to api.berget.ai, not through the Eir backend.")
                             .font(.system(size: 12, weight: .regular, design: .default))
                             .foregroundStyle(.secondary)
                     } else {

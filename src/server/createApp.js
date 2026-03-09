@@ -7,10 +7,12 @@ import { buildFhirDocumentReference } from "../services/fhirExport.js";
 import { parseMultipartFormData } from "../util/multipart.js";
 import { applySavedSettings, saveSettings, configToSettingsResponse } from "../services/settingsStore.js";
 import { buildTranscriptDocument, searchTranscriptDocument } from "../services/transcriptArtifacts.js";
+import { createClientAccessService } from "../services/clientAccessService.js";
 
 export function createApp({ config }) {
   let transcriptionProvider = createTranscriptionProvider(config);
   let noteGenerator = createNoteGenerator(config);
+  const clientAccess = createClientAccessService(config);
   let scribeService = createScribeService({
     config,
     transcriptionProvider,
@@ -26,11 +28,6 @@ export function createApp({ config }) {
   return {
     async handler(req, res) {
       try {
-        if (requiresBearerAuth(req, config) && !isAuthorized(req, config)) {
-          res.setHeader("WWW-Authenticate", 'Bearer realm="open-medical-scribe"');
-          return jsonResponse(res, 401, { error: "Unauthorized" });
-        }
-
         if (req.method === "GET" && req.url === "/health") {
           return jsonResponse(res, 200, {
             ok: true,
@@ -52,6 +49,7 @@ export function createApp({ config }) {
         }
 
         if (req.method === "GET" && req.url === "/v1/providers") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           return jsonResponse(res, 200, {
             runtime: {
               mode: config.scribeMode,
@@ -83,10 +81,12 @@ export function createApp({ config }) {
         }
 
         if (req.method === "GET" && req.url === "/v1/settings") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           return jsonResponse(res, 200, configToSettingsResponse(config));
         }
 
         if (req.method === "POST" && req.url === "/v1/settings") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           const patch = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const merged = saveSettings(patch, config);
           applySavedSettings(config);
@@ -95,19 +95,44 @@ export function createApp({ config }) {
           return jsonResponse(res, 200, configToSettingsResponse(config));
         }
 
+        if (req.method === "POST" && req.url === "/v1/client/bootstrap") {
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
+          const bootstrap = clientAccess.issueBootstrapToken({
+            installId: body.installId,
+            ipAddress: getRequestIp(req),
+            userAgent: req.headers?.["user-agent"] || "",
+            platform: body.platform || "unknown",
+            attestation: body.attestation || {},
+          });
+          return jsonResponse(res, 200, bootstrap);
+        }
+
         if (req.method === "POST" && req.url === "/v1/encounters/scribe") {
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const result = await scribeService.processEncounter(body);
+          if (auth.kind === "client") {
+            result.clientQuota = clientAccess.recordScribeUsage(auth.clientId, {
+              input: body,
+              result,
+            });
+          }
           return jsonResponse(res, 200, result);
         }
 
         if (req.method === "POST" && req.url === "/v1/transcribe") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const transcript = await scribeService.transcribeOnly(body);
           return jsonResponse(res, 200, transcript);
         }
 
         if (req.method === "POST" && req.url === "/v1/transcripts/search") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           if (!body || typeof body.query !== "string" || !body.query.trim()) {
             return jsonResponse(res, 400, { error: "query is required" });
@@ -134,6 +159,7 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/transcribe/upload") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           const contentType = req.headers?.["content-type"] || "";
           if (!String(contentType).toLowerCase().includes("multipart/form-data")) {
             throw badRequest("Expected multipart/form-data");
@@ -162,6 +188,7 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/export/fhir-document-reference") {
+          if (ensureAdminAuthorized(req, res, config)) return;
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           if (!body || typeof body.noteText !== "string" || !body.noteText.trim()) {
             return jsonResponse(res, 400, { error: "noteText is required" });
@@ -230,22 +257,29 @@ export function createApp({ config }) {
         const status = error.statusCode || 500;
         return jsonResponse(res, status, {
           error: error.message || "Internal Server Error",
+          code: error.code,
+          quota: error.quota,
         });
       }
     },
   };
 }
 
-function requiresBearerAuth(req, config) {
-  const token = config?.auth?.bearerToken || "";
-  if (!token) {
+function ensureAdminAuthorized(req, res, config) {
+  if (isAdminAuthorized(req, config)) {
     return false;
   }
 
-  return typeof req.url === "string" && req.url.startsWith("/v1/");
+  if (!config?.auth?.bearerToken) {
+    return false;
+  }
+
+  res.setHeader("WWW-Authenticate", 'Bearer realm="open-medical-scribe"');
+  jsonResponse(res, 401, { error: "Unauthorized" });
+  return true;
 }
 
-function isAuthorized(req, config) {
+function isAdminAuthorized(req, config) {
   const expected = config?.auth?.bearerToken || "";
   if (!expected) {
     return true;
@@ -253,4 +287,42 @@ function isAuthorized(req, config) {
 
   const header = req.headers?.authorization || req.headers?.Authorization || "";
   return header === `Bearer ${expected}`;
+}
+
+function authorizeScribeRequest(req, res, config, clientAccess) {
+  if (isAdminAuthorized(req, config)) {
+    return { kind: "admin" };
+  }
+
+  const token = extractBearerToken(req);
+  const client = clientAccess.authenticateClientToken(token);
+  if (client) {
+    return { kind: "client", clientId: client.clientId };
+  }
+
+  if (!config?.auth?.bearerToken && !token) {
+    return { kind: "anonymous" };
+  }
+
+  res.setHeader("WWW-Authenticate", 'Bearer realm="open-medical-scribe"');
+  jsonResponse(res, 401, { error: "Unauthorized" });
+  return null;
+}
+
+function extractBearerToken(req) {
+  const header = req.headers?.authorization || req.headers?.Authorization || "";
+  if (!header.startsWith("Bearer ")) {
+    return "";
+  }
+
+  return header.slice("Bearer ".length).trim();
+}
+
+function getRequestIp(req) {
+  const forwarded = req.headers?.["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim();
+  }
+
+  return req.socket?.remoteAddress || "";
 }

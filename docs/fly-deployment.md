@@ -29,6 +29,14 @@ cd /Users/birger/Community/open-medical-scribe
 
 export BERGET_API_KEY=replace-with-your-berget-key
 export API_BEARER_TOKEN=replace-with-a-long-random-token
+export CLIENT_AUTH_STATE_FILE=/data/client-access.json
+export CLIENT_TRIAL_MAX_REQUESTS=20
+export CLIENT_TRIAL_MAX_AUDIO_SECONDS=1200
+export CLIENT_TRIAL_MAX_ESTIMATED_COST_USD=2.5
+export CLIENT_BOOTSTRAP_PER_IP_PER_HOUR=10
+export CLIENT_BOOTSTRAP_PER_INSTALL_PER_DAY=3
+export CLIENT_ESTIMATED_COST_PER_AUDIO_MINUTE_USD=0.08
+export CLIENT_REQUIRE_ATTESTATION=false
 
 npm run deploy:fly
 ```
@@ -58,7 +66,8 @@ Then point DNS for `scribe.eir.space` to the Fly target the same way the existin
 The iPhone release build should point at:
 
 - backend URL: `https://scribe.eir.space`
-- bearer token: same value as `API_BEARER_TOKEN`
+- ordinary users do not need the operator bearer token; the app bootstraps a per-install trial token automatically via `POST /v1/client/bootstrap`
+- keep `API_BEARER_TOKEN` private for operator tooling and protected backend routes
 
 If you later want to expose the service under another `eir.space` subdomain, update:
 

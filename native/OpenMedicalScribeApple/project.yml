@@ -10,7 +10,7 @@ settings:
   configs:
     Debug:
       OMS_DEFAULT_BACKEND_URL: https://scribe.eir.space
-      OMS_DEFAULT_BACKEND_API_TOKEN: WLBzfzO8X8afGkNyBoDwUiYZfS0jQseVX4wtIkALvdSaEESBQRuKI0G/kbrDDr8N
+      OMS_DEFAULT_BACKEND_API_TOKEN: ""
       EIR_SUPPORT_URL: https://scribe.eir.space/support.html
       EIR_PRIVACY_POLICY_URL: https://scribe.eir.space/privacy-policy.html
     Release:

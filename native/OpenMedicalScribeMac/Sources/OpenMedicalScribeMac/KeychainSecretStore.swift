@@ -5,6 +5,9 @@ import Security
 enum KeychainSecretStore {
     static let bergetAPIKeyAccount = "io.openmedicalscribe.berget.api-key"
     static let backendAPITokenAccount = "io.openmedicalscribe.backend.api-token"
+    static let cloudClientTokenAccount = "io.openmedicalscribe.cloud.client-token"
+    static let cloudInstallIDAccount = "io.openmedicalscribe.cloud.install-id"
+    static let cloudAppAttestKeyIDAccount = "io.openmedicalscribe.cloud.app-attest-key-id"
     static let backendURLAccount = "io.openmedicalscribe.backend.url"
 
     static func load(account: String) -> String {

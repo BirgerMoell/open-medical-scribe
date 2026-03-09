@@ -33,6 +33,14 @@ BERGET_API_KEY=...
 BERGET_TRANSCRIBE_MODEL=KBLab/kb-whisper-large
 BERGET_NOTE_MODEL=openai/gpt-oss-120b
 API_BEARER_TOKEN=replace-with-long-random-token
+CLIENT_AUTH_STATE_FILE=/data/client-access.json
+CLIENT_TRIAL_MAX_REQUESTS=20
+CLIENT_TRIAL_MAX_AUDIO_SECONDS=1200
+CLIENT_TRIAL_MAX_ESTIMATED_COST_USD=2.5
+CLIENT_BOOTSTRAP_PER_IP_PER_HOUR=10
+CLIENT_BOOTSTRAP_PER_INSTALL_PER_DAY=3
+CLIENT_ESTIMATED_COST_PER_AUDIO_MINUTE_USD=0.08
+CLIENT_REQUIRE_ATTESTATION=false
 SETTINGS_FILE=/data/settings.json
 ENABLE_SETTINGS_WRITE=false
 MAX_REQUEST_BYTES=67108864
@@ -63,10 +71,11 @@ Requirements:
 
 ## iPhone app configuration
 
-In the app Settings:
+The default iPhone flow no longer needs a pasted backend token for ordinary trial use:
 
 - set `Backend URL` to your HTTPS endpoint
-- set `Backend API Token` to the same bearer token configured on the server
+- leave the operator token empty for normal users; the app will obtain a per-install client token automatically on first cloud use
+- only use `Operator Backend Token (advanced)` for internal testing or operator-managed clients
 - leave `Use your own Berget API key` off unless you explicitly want direct client-to-Berget traffic
 
 ## Before going live

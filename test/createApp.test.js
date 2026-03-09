@@ -1,10 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Readable } from "node:stream";
+import { randomUUID } from "node:crypto";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { createApp } from "../src/server/createApp.js";
 
 function baseConfig(overrides = {}) {
-  return {
+  const nonce = randomUUID();
+  const defaults = {
     port: 8787,
     scribeMode: "hybrid",
     appEnv: "test",
@@ -12,8 +16,18 @@ function baseConfig(overrides = {}) {
     auth: {
       bearerToken: "",
     },
+    clientAccess: {
+      stateFile: join(tmpdir(), `oms-client-access-${nonce}.json`),
+      trialMaxRequests: 20,
+      trialMaxAudioSeconds: 20 * 60,
+      trialMaxEstimatedCostUsd: 2.5,
+      bootstrapPerIpPerHour: 10,
+      bootstrapPerInstallPerDay: 3,
+      estimatedCostPerAudioMinuteUsd: 0.08,
+      requireAttestation: false,
+    },
     settings: {
-      file: "data/test-settings.json",
+      file: join(tmpdir(), `oms-settings-${nonce}.json`),
       writeEnabled: true,
     },
     http: {
@@ -68,7 +82,23 @@ function baseConfig(overrides = {}) {
       timeoutMs: 1000,
       expects: "stdin",
     },
+  };
+
+  return {
+    ...defaults,
     ...overrides,
+    auth: {
+      ...defaults.auth,
+      ...overrides.auth,
+    },
+    clientAccess: {
+      ...defaults.clientAccess,
+      ...overrides.clientAccess,
+    },
+    settings: {
+      ...defaults.settings,
+      ...overrides.settings,
+    },
   };
 }
 
@@ -184,6 +214,124 @@ test("POST /v1/encounters/scribe accepts bearer auth when configured", async () 
 
   assert.equal(res.statusCode, 200);
   assert.ok(typeof res.json.noteDraft === "string" && res.json.noteDraft.length > 0);
+});
+
+test("POST /v1/client/bootstrap issues a trial client token", async () => {
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
+  const res = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/bootstrap",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.10",
+      "user-agent": "EirScribeTests/1.0",
+    },
+    body: JSON.stringify({
+      installId: "install-123456789012",
+      platform: "ios",
+      attestation: {
+        provider: "app_attest",
+        status: "supported_key_ready",
+        isSupported: true,
+      },
+    }),
+  });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.json.clientId, /^cli_/);
+  assert.match(res.json.bearerToken, /^oms_/);
+  assert.equal(res.json.quota.remaining.requests, 20);
+});
+
+test("POST /v1/encounters/scribe accepts a bootstrap client token", async () => {
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
+  const bootstrap = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/bootstrap",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.10",
+    },
+    body: JSON.stringify({
+      installId: "install-abcdefghijkl",
+      platform: "ios",
+      attestation: {
+        provider: "app_attest",
+        status: "supported_key_ready",
+        isSupported: true,
+      },
+    }),
+  });
+
+  const res = await invoke(app, {
+    method: "POST",
+    url: "/v1/encounters/scribe",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${bootstrap.json.bearerToken}`,
+    },
+    body: JSON.stringify({ transcript: "Patienten har hosta." }),
+  });
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json.clientQuota.used.requests, 1);
+});
+
+test("POST /v1/encounters/scribe enforces client trial request caps", async () => {
+  const app = createApp({
+    config: baseConfig({
+      auth: { bearerToken: "secret-token" },
+      clientAccess: {
+        trialMaxRequests: 1,
+        trialMaxAudioSeconds: 20 * 60,
+        trialMaxEstimatedCostUsd: 2.5,
+        bootstrapPerIpPerHour: 10,
+        bootstrapPerInstallPerDay: 3,
+        estimatedCostPerAudioMinuteUsd: 0.08,
+        requireAttestation: false,
+      },
+    }),
+  });
+  const bootstrap = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/bootstrap",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.10",
+    },
+    body: JSON.stringify({
+      installId: "install-request-limit",
+      platform: "ios",
+      attestation: {
+        provider: "app_attest",
+        status: "supported_key_ready",
+        isSupported: true,
+      },
+    }),
+  });
+
+  await invoke(app, {
+    method: "POST",
+    url: "/v1/encounters/scribe",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${bootstrap.json.bearerToken}`,
+    },
+    body: JSON.stringify({ transcript: "Första anteckningen." }),
+  });
+
+  const second = await invoke(app, {
+    method: "POST",
+    url: "/v1/encounters/scribe",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${bootstrap.json.bearerToken}`,
+    },
+    body: JSON.stringify({ transcript: "Andra anteckningen." }),
+  });
+
+  assert.equal(second.statusCode, 429);
+  assert.equal(second.json.code, "trial_request_limit_reached");
 });
 
 test("POST /v1/export/fhir-document-reference validates noteText", async () => {
