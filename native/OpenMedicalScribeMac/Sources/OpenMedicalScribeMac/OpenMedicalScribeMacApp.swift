@@ -1454,11 +1454,20 @@ private struct ScribeRootView: View {
 
         switch launchContext.screenshotScenario {
         case .history:
-            showingHistoryLibrary = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                showingHistoryLibrary = true
+            }
         case .export:
-            presentExportSheet()
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                presentExportSheet()
+            }
         case .versions:
-            presentVersionsSheet()
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                presentVersionsSheet()
+            }
         case .processing, .main, .none:
             break
         }
