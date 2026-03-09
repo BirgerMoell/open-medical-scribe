@@ -1,14 +1,13 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-const SETTINGS_FILE = "data/settings.json";
-
 /**
  * Load saved settings from disk. Returns empty object if no file exists.
  */
-export function loadSavedSettings() {
+export function loadSavedSettings(config = {}) {
+  const settingsFile = resolveSettingsFile(config);
   try {
-    const raw = readFileSync(SETTINGS_FILE, "utf8");
+    const raw = readFileSync(settingsFile, "utf8");
     return JSON.parse(raw);
   } catch {
     return {};
@@ -18,12 +17,19 @@ export function loadSavedSettings() {
 /**
  * Save settings overrides to disk. Merges with existing saved settings.
  */
-export function saveSettings(patch) {
-  const existing = loadSavedSettings();
+export function saveSettings(patch, config = {}) {
+  if (config.settings?.writeEnabled === false) {
+    const error = new Error("Runtime settings writes are disabled in this environment");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const settingsFile = resolveSettingsFile(config);
+  const existing = loadSavedSettings(config);
   const merged = deepMerge(existing, patch);
 
-  mkdirSync(dirname(SETTINGS_FILE), { recursive: true });
-  writeFileSync(SETTINGS_FILE, JSON.stringify(merged, null, 2) + "\n");
+  mkdirSync(dirname(settingsFile), { recursive: true });
+  writeFileSync(settingsFile, JSON.stringify(merged, null, 2) + "\n");
 
   return merged;
 }
@@ -32,7 +38,7 @@ export function saveSettings(patch) {
  * Apply saved settings on top of the loaded config object (mutates config).
  */
 export function applySavedSettings(config) {
-  const saved = loadSavedSettings();
+  const saved = loadSavedSettings(config);
   if (!saved || !Object.keys(saved).length) return;
 
   // Top-level simple values
@@ -149,4 +155,8 @@ function deepMerge(target, source) {
     }
   }
   return result;
+}
+
+function resolveSettingsFile(config) {
+  return config?.settings?.file || "data/settings.json";
 }

@@ -11,8 +11,14 @@ export function loadConfig(env) {
   return {
     port: parseInt(env.PORT || "8787", 10),
     scribeMode,
+    appEnv: env.APP_ENV || env.NODE_ENV || "development",
+    publicBaseUrl: env.PUBLIC_BASE_URL || "",
     auth: {
       bearerToken: env.API_BEARER_TOKEN || "",
+    },
+    settings: {
+      file: env.SETTINGS_FILE || "data/settings.json",
+      writeEnabled: String(env.ENABLE_SETTINGS_WRITE || "true").toLowerCase() !== "false",
     },
     http: {
       maxRequestBytes: parseInt(env.MAX_REQUEST_BYTES || "67108864", 10),

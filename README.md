@@ -72,6 +72,10 @@ For development with auto-reload:
 npm run dev
 ```
 
+## Production backend
+
+The backend is ready to run as a dedicated Fly.io app in Stockholm. For the Sweden-first production path on `eir.space`, see [fly-deployment.md](/Users/birger/Community/open-medical-scribe/docs/fly-deployment.md) and [deploy-sweden.md](/Users/birger/Community/open-medical-scribe/docs/deploy-sweden.md).
+
 ### Trying it without any API keys
 
 Out of the box, the project starts in mock mode (no real transcription or note generation). To get real output with no API keys:

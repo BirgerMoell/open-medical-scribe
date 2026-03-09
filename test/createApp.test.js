@@ -7,8 +7,14 @@ function baseConfig(overrides = {}) {
   return {
     port: 8787,
     scribeMode: "hybrid",
+    appEnv: "test",
+    publicBaseUrl: "",
     auth: {
       bearerToken: "",
+    },
+    settings: {
+      file: "data/test-settings.json",
+      writeEnabled: true,
     },
     http: {
       maxRequestBytes: 64 * 1024,
@@ -111,6 +117,27 @@ test("GET /health returns service status", async () => {
   assert.equal(res.statusCode, 200);
   assert.equal(res.json.ok, true);
   assert.equal(res.json.service, "open-medical-scribe");
+  assert.equal(res.json.env, "test");
+});
+
+test("POST /v1/settings can be disabled in production", async () => {
+  const app = createApp({
+    config: baseConfig({
+      settings: {
+        file: "data/test-settings.json",
+        writeEnabled: false,
+      },
+    }),
+  });
+  const res = await invoke(app, {
+    method: "POST",
+    url: "/v1/settings",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ noteProvider: "berget" }),
+  });
+
+  assert.equal(res.statusCode, 403);
+  assert.match(res.json.error, /disabled/i);
 });
 
 test("POST /v1/encounters/scribe requires bearer auth when configured", async () => {

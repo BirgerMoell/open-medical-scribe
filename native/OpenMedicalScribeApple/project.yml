@@ -13,7 +13,7 @@ settings:
       EIR_SUPPORT_URL: https://birgermoell.github.io/open-medical-scribe/support.html
       EIR_PRIVACY_POLICY_URL: https://birgermoell.github.io/open-medical-scribe/privacy-policy.html
     Release:
-      OMS_DEFAULT_BACKEND_URL: https://api.eirscribe.se
+      OMS_DEFAULT_BACKEND_URL: https://scribe.eir.space
       EIR_SUPPORT_URL: https://birgermoell.github.io/open-medical-scribe/support.html
       EIR_PRIVACY_POLICY_URL: https://birgermoell.github.io/open-medical-scribe/privacy-policy.html
 packages:

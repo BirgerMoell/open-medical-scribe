@@ -36,6 +36,9 @@ export function createApp({ config }) {
             ok: true,
             service: "open-medical-scribe",
             mode: config.scribeMode,
+            env: config.appEnv,
+            webUi: config.enableWebUi,
+            publicBaseUrl: config.publicBaseUrl,
           });
         }
 
@@ -85,7 +88,7 @@ export function createApp({ config }) {
 
         if (req.method === "POST" && req.url === "/v1/settings") {
           const patch = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
-          const merged = saveSettings(patch);
+          const merged = saveSettings(patch, config);
           applySavedSettings(config);
           rebuildProviders();
           console.log(`[settings] Providers rebuilt: tx=${config.transcriptionProvider}, note=${config.noteProvider}`);

@@ -1,0 +1,54 @@
+app = "eir-scribe-backend"
+primary_region = "arn"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  APP_ENV = "production"
+  PORT = "8787"
+  SCRIBE_MODE = "api"
+  ENABLE_WEB_UI = "false"
+  TRANSCRIPTION_PROVIDER = "berget"
+  NOTE_PROVIDER = "berget"
+  PUBLIC_BASE_URL = "https://scribe.eir.space"
+  SETTINGS_FILE = "/data/settings.json"
+  ENABLE_SETTINGS_WRITE = "false"
+  MAX_REQUEST_BYTES = "67108864"
+  BERGET_BASE_URL = "https://api.berget.ai"
+  BERGET_TRANSCRIBE_MODEL = "KBLab/kb-whisper-large"
+  BERGET_NOTE_MODEL = "openai/gpt-oss-120b"
+  AUDIT_LOG_FILE = "/data/audit.log"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 40
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"
+
+[[mounts]]
+  source = "scribe_data"
+  destination = "/data"
+
+[deploy]
+  strategy = "rolling"

@@ -15,6 +15,7 @@
 Use these repo artifacts:
 
 - `Dockerfile`
+- `fly.toml`
 - `infra/caddy/Caddyfile`
 - `infra/systemd/open-medical-scribe.service`
 
@@ -23,6 +24,8 @@ Minimum environment:
 ```bash
 PORT=8787
 SCRIBE_MODE=api
+APP_ENV=production
+PUBLIC_BASE_URL=https://scribe.eir.space
 ENABLE_WEB_UI=false
 TRANSCRIPTION_PROVIDER=berget
 NOTE_PROVIDER=berget
@@ -30,9 +33,22 @@ BERGET_API_KEY=...
 BERGET_TRANSCRIBE_MODEL=KBLab/kb-whisper-large
 BERGET_NOTE_MODEL=openai/gpt-oss-120b
 API_BEARER_TOKEN=replace-with-long-random-token
+SETTINGS_FILE=/data/settings.json
+ENABLE_SETTINGS_WRITE=false
 MAX_REQUEST_BYTES=67108864
-AUDIT_LOG_FILE=/opt/open-medical-scribe/data/audit.log
+AUDIT_LOG_FILE=/data/audit.log
 ```
+
+## Fly.io on `eir.space`
+
+If you want the quickest production path, mirror the existing `egen_journal` Fly setup:
+
+- dedicated Fly app for scribe traffic
+- `primary_region = "arn"`
+- custom domain such as `scribe.eir.space`
+- one Fly volume mounted at `/data`
+
+The repo now includes a ready starting point in [fly.toml](/Users/birger/Community/open-medical-scribe/fly.toml) and a deployment guide in [fly-deployment.md](/Users/birger/Community/open-medical-scribe/docs/fly-deployment.md).
 
 ## Reverse proxy
 
