@@ -86,13 +86,39 @@ async function transcribeLocally({
       : `Running ${transcriptionModel.label} with WebAssembly.`,
   });
 
-  const output = await transcriber(new Float32Array(audioBuffer), {
-    return_timestamps: "word",
-    chunk_length_s: 30,
-    stride_length_s: 5,
-    task: "transcribe",
-    ...(localizedLanguage ? { language: localizedLanguage } : {}),
-  });
+  let output;
+  let warning = null;
+  try {
+    output = await transcriber(new Float32Array(audioBuffer), {
+      return_timestamps: "word",
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      task: "transcribe",
+      ...(localizedLanguage ? { language: localizedLanguage } : {}),
+    });
+  } catch (error) {
+    if (!requiresAttentionFallback(error)) {
+      throw error;
+    }
+
+    warning =
+      `${transcriptionModel.label} cannot extract word timestamps in this browser export, so Eir fell back to plain transcription text.`;
+    postProgress({
+      stage: "local-transcription",
+      stepId: "transcription-run",
+      state: "active",
+      title: "Transcribing locally",
+      detail: "The browser model does not expose word timestamps. Falling back to plain text transcription.",
+    });
+
+    output = await transcriber(new Float32Array(audioBuffer), {
+      return_timestamps: false,
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      task: "transcribe",
+      ...(localizedLanguage ? { language: localizedLanguage } : {}),
+    });
+  }
 
   postProgress({
     stage: "local-transcription",
@@ -106,6 +132,7 @@ async function transcribeLocally({
   return {
     text: output.text || "",
     chunks: output.chunks || [],
+    warning,
     providerLabel: supportsWebGPU
       ? `${transcriptionModel.label} (WebGPU)`
       : `${transcriptionModel.label} (WASM)`,
@@ -382,4 +409,9 @@ function sanitizeLocalNoteOutput(text) {
     .replace(/^```[a-z]*\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
+}
+
+function requiresAttentionFallback(error) {
+  const message = String(error?.message || error || "").toLowerCase();
+  return message.includes("cross attentions") || message.includes("output_attentions");
 }

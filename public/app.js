@@ -298,7 +298,7 @@ async function processLocally() {
   renderResult({
     transcript: transcription.text,
     noteDraft: noteResult.noteDraft,
-    warnings: noteResult.warning ? [noteResult.warning] : [],
+    warnings: [transcription.warning, noteResult.warning].filter(Boolean),
     providers: {
       transcription: transcription.providerLabel,
       note: noteResult.providerLabel,
