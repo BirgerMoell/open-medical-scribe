@@ -133,27 +133,56 @@ async function draftNoteLocally({
     stepId: "note-run",
     state: "active",
     title: "Drafting locally",
-    detail: "Running Qwen in the browser on WebGPU.",
+    detail: "Running Qwen in the browser on WebGPU. Waiting for the first tokens.",
   });
 
   const prompt = buildPrompt({ transcript, noteStyle, locale, language });
-  const response = await engine.chat.completions.create({
+  const stream = await engine.chat.completions.create({
     messages: prompt,
     temperature: 0.2,
-    max_tokens: 420,
-    response_format: { type: "json_object" },
+    max_tokens: 260,
+    stream: true,
     enable_thinking: false,
   });
 
-  const content = response.choices?.[0]?.message?.content || "{}";
-  let parsed;
-  try {
-    parsed = JSON.parse(extractJsonObject(content));
-  } catch {
-    parsed = { noteDraft: String(content || "").trim() };
+  let noteDraft = "";
+  let receivedAnyToken = false;
+  let lastUpdateLength = 0;
+
+  for await (const chunk of stream) {
+    const token = chunk.choices?.[0]?.delta?.content || "";
+    if (!token) {
+      continue;
+    }
+    noteDraft += token;
+
+    if (!receivedAnyToken) {
+      receivedAnyToken = true;
+      postProgress({
+        stage: "local-note",
+        stepId: "note-run",
+        state: "active",
+        title: "Drafting locally",
+        detail: "Qwen started generating tokens on WebGPU.",
+      });
+    }
+
+    if (noteDraft.length - lastUpdateLength >= 80) {
+      lastUpdateLength = noteDraft.length;
+      postProgress({
+        stage: "local-note",
+        stepId: "note-run",
+        state: "active",
+        title: "Drafting locally",
+        detail: `Generated about ${noteDraft.length} characters locally.`,
+      });
+    }
   }
 
-  const noteDraft = String(parsed.noteDraft || "").trim() || buildTemplateNote(transcript, noteStyle, locale);
+  noteDraft = sanitizeLocalNoteOutput(noteDraft);
+  if (!noteDraft) {
+    noteDraft = buildTemplateNote(transcript, noteStyle, locale);
+  }
 
   postProgress({
     stage: "local-note",
@@ -316,8 +345,8 @@ function buildPrompt({ transcript, noteStyle, locale, language }) {
     {
       role: "system",
       content:
-        "You are Eir Scribe, a careful medical scribe. Return strict JSON with exactly one key: noteDraft. " +
-        "Do not include markdown. Do not invent facts. If details are uncertain, say so briefly in the note.",
+        "You are Eir Scribe, a careful medical scribe. Return only the note text, with no JSON, no markdown fence, and no commentary before or after the note. " +
+        "Do not invent facts. If details are uncertain, say so briefly in the note.",
     },
     {
       role: "user",
@@ -325,7 +354,8 @@ function buildPrompt({ transcript, noteStyle, locale, language }) {
         `Write a concise ${noteStyle || "journal"} medical note in ${outputLanguage}. ` +
         `Locale: ${locale || "sv-SE"}. ` +
         "Keep it clinician-friendly and structured for review. Transcript:\n\n" +
-        transcript,
+        transcript +
+        "\n\nReturn only the final note text.",
     },
   ];
 }
@@ -346,11 +376,10 @@ function buildTemplateNote(transcript, noteStyle, locale) {
     : `Chief concern\n${firstSentence}\n\nHistory\n${transcript}\n\nAssessment\nLocal browser draft. Clinical review is required before use.\n\nPlan\nVerify facts, add exam details, and sign only after manual review.`;
 }
 
-function extractJsonObject(text) {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    return "{}";
-  }
-  return text.slice(start, end + 1);
+function sanitizeLocalNoteOutput(text) {
+  return String(text || "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/^```[a-z]*\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
 }
