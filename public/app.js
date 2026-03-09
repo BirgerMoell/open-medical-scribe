@@ -19,22 +19,43 @@ const modeLocalButton = document.getElementById("mode-local");
 const modeDetail = document.getElementById("mode-detail");
 const runtimePill = document.getElementById("runtime-pill");
 const capabilityPill = document.getElementById("capability-pill");
+const modelSummary = document.getElementById("model-summary");
 const localProgressCard = document.getElementById("local-progress-card");
 const localProgressTitle = document.getElementById("local-progress-title");
 const localProgressBadge = document.getElementById("local-progress-badge");
 const localProgressDetail = document.getElementById("local-progress-detail");
 const localProgressFill = document.getElementById("local-progress-fill");
 const localStageList = document.getElementById("local-stage-list");
+const openSettingsButton = document.getElementById("open-settings-btn");
+const closeSettingsButton = document.getElementById("close-settings-btn");
+const settingsBackdrop = document.getElementById("settings-backdrop");
+const settingsSheet = document.getElementById("settings-sheet");
+const saveModelSettingsButton = document.getElementById("save-model-settings-btn");
+const resetModelSettingsButton = document.getElementById("reset-model-settings-btn");
+const localNoteModelSelect = document.getElementById("local-note-model-select");
+const customNoteModelField = document.getElementById("custom-note-model-field");
+const customNoteModelInput = document.getElementById("custom-note-model-input");
+const localWhisperModelSelect = document.getElementById("local-whisper-model-select");
+const customWhisperModelField = document.getElementById("custom-whisper-model-field");
+const customWhisperModelInput = document.getElementById("custom-whisper-model-input");
+const settingsProfileOutput = document.getElementById("settings-profile-output");
 
 const STORAGE_KEYS = {
   installId: "eirScribe.installId",
   clientToken: "eirScribe.clientToken",
   quota: "eirScribe.clientQuota",
   executionMode: "eirScribe.executionMode",
+  localModelSettings: "eirScribe.localModelSettings",
 };
 
 const DEFAULTS = {
   mode: "cloud",
+  localModelSettings: {
+    noteModel: "auto",
+    customNoteModel: "",
+    whisperModel: "auto",
+    customWhisperModel: "",
+  },
 };
 
 let mediaRecorder = null;
@@ -51,6 +72,52 @@ const pendingWorkerRequests = new Map();
 const localCapability = {
   webgpu: typeof navigator !== "undefined" && !!navigator.gpu,
   mediaRecorder: typeof window !== "undefined" && typeof window.MediaRecorder !== "undefined",
+};
+
+const NOTE_MODEL_CATALOG = {
+  "Qwen3-0.6B-q4f16_1-MLC": {
+    id: "Qwen3-0.6B-q4f16_1-MLC",
+    label: "Qwen 3 0.6B",
+  },
+  "Qwen3-1.7B-q4f16_1-MLC": {
+    id: "Qwen3-1.7B-q4f16_1-MLC",
+    label: "Qwen 3 1.7B",
+  },
+  "Qwen3-4B-q4f16_1-MLC": {
+    id: "Qwen3-4B-q4f16_1-MLC",
+    label: "Qwen 3 4B",
+  },
+};
+
+const WHISPER_MODEL_CATALOG = {
+  "KBLab/kb-whisper-tiny": {
+    id: "KBLab/kb-whisper-tiny",
+    label: "KB Whisper Tiny",
+    subfolder: "onnx",
+  },
+  "KBLab/kb-whisper-base": {
+    id: "KBLab/kb-whisper-base",
+    label: "KB Whisper Base",
+    subfolder: "onnx",
+  },
+  "KBLab/kb-whisper-small": {
+    id: "KBLab/kb-whisper-small",
+    label: "KB Whisper Small",
+    subfolder: "onnx",
+  },
+};
+
+let detectedLocalModelPlan = {
+  noteModel: NOTE_MODEL_CATALOG["Qwen3-0.6B-q4f16_1-MLC"],
+  transcription: {
+    webgpu: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"],
+    wasm: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-tiny"],
+  },
+  profileLabel: "Default local profile",
+};
+
+let localModelSettings = {
+  ...DEFAULTS.localModelSettings,
 };
 
 const LOCAL_STAGE_ORDER = [
@@ -95,17 +162,103 @@ copyButton.addEventListener("click", async () => {
 
 modeCloudButton.addEventListener("click", () => setExecutionMode("cloud"));
 modeLocalButton.addEventListener("click", () => setExecutionMode("local"));
+openSettingsButton.addEventListener("click", openSettingsSheet);
+closeSettingsButton.addEventListener("click", closeSettingsSheet);
+settingsBackdrop.addEventListener("click", closeSettingsSheet);
+saveModelSettingsButton.addEventListener("click", saveLocalModelSettings);
+resetModelSettingsButton.addEventListener("click", resetLocalModelSettings);
+localNoteModelSelect.addEventListener("change", () => {
+  customNoteModelField.hidden = localNoteModelSelect.value !== "custom";
+});
+localWhisperModelSelect.addEventListener("change", () => {
+  customWhisperModelField.hidden = localWhisperModelSelect.value !== "custom";
+});
 
-boot();
+void boot();
 
-function boot() {
+async function boot() {
+  hydrateLocalModelSettings();
+  populateLocalModelSettingsForm();
   hydrateQuota();
+  if (localCapability.webgpu) {
+    await detectLocalModelPlan();
+  }
+  renderLocalModelSummary();
+  updateSettingsProfileOutput();
   setExecutionMode(localStorage.getItem(STORAGE_KEYS.executionMode) || DEFAULTS.mode, { persist: false });
   updateCapabilityPill();
 }
 
+function hydrateLocalModelSettings() {
+  const raw = localStorage.getItem(STORAGE_KEYS.localModelSettings);
+  if (!raw) {
+    localModelSettings = { ...DEFAULTS.localModelSettings };
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    localModelSettings = {
+      ...DEFAULTS.localModelSettings,
+      ...parsed,
+    };
+  } catch {
+    localModelSettings = { ...DEFAULTS.localModelSettings };
+    localStorage.removeItem(STORAGE_KEYS.localModelSettings);
+  }
+}
+
+function persistLocalModelSettings() {
+  localStorage.setItem(STORAGE_KEYS.localModelSettings, JSON.stringify(localModelSettings));
+}
+
+function populateLocalModelSettingsForm() {
+  localNoteModelSelect.value = localModelSettings.noteModel || "auto";
+  customNoteModelInput.value = localModelSettings.customNoteModel || "";
+  customNoteModelField.hidden = localNoteModelSelect.value !== "custom";
+  localWhisperModelSelect.value = localModelSettings.whisperModel || "auto";
+  customWhisperModelInput.value = localModelSettings.customWhisperModel || "";
+  customWhisperModelField.hidden = localWhisperModelSelect.value !== "custom";
+}
+
+function openSettingsSheet() {
+  populateLocalModelSettingsForm();
+  updateSettingsProfileOutput();
+  settingsBackdrop.hidden = false;
+  settingsSheet.hidden = false;
+}
+
+function closeSettingsSheet() {
+  settingsBackdrop.hidden = true;
+  settingsSheet.hidden = true;
+}
+
+function saveLocalModelSettings() {
+  localModelSettings = {
+    noteModel: localNoteModelSelect.value || "auto",
+    customNoteModel: customNoteModelInput.value.trim(),
+    whisperModel: localWhisperModelSelect.value || "auto",
+    customWhisperModel: customWhisperModelInput.value.trim(),
+  };
+  persistLocalModelSettings();
+  renderLocalModelSummary();
+  updateSettingsProfileOutput();
+  setExecutionMode(getExecutionMode(), { persist: false });
+  closeSettingsSheet();
+}
+
+function resetLocalModelSettings() {
+  localModelSettings = { ...DEFAULTS.localModelSettings };
+  persistLocalModelSettings();
+  populateLocalModelSettingsForm();
+  renderLocalModelSummary();
+  updateSettingsProfileOutput();
+  setExecutionMode(getExecutionMode(), { persist: false });
+}
+
 function setExecutionMode(mode, { persist = true } = {}) {
   const normalizedMode = mode === "local" ? "local" : "cloud";
+  const effectivePlan = getEffectiveLocalModelPlan();
   if (persist) {
     localStorage.setItem(STORAGE_KEYS.executionMode, normalizedMode);
   }
@@ -118,18 +271,18 @@ function setExecutionMode(mode, { persist = true } = {}) {
   if (normalizedMode === "local") {
     runtimePill.textContent = localCapability.webgpu ? "Local WebGPU" : "Local WASM";
     modeDetail.textContent = localCapability.webgpu
-      ? "Runs in your browser. First use downloads Swedish Whisper and a compact Qwen model, then reuses the browser cache."
+      ? `Runs in your browser. First use downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label}, then reuses the browser cache.`
       : "Runs in your browser. Swedish Whisper stays local, but without WebGPU the note falls back to a deterministic local template.";
     if (!isRecording) {
       statusLabel.textContent = "Ready";
       statusDetail.textContent = localCapability.webgpu
-        ? "Local mode downloads Swedish Whisper and Qwen on first use, then transcribes and drafts in the browser."
+        ? `Local mode downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label} on first use, then transcribes and drafts in the browser.`
         : "Local mode transcribes with Swedish Whisper in the browser. Without WebGPU, note drafting uses a local template.";
     }
     showLocalProgress({
       title: "Local model path",
       detail: localCapability.webgpu
-        ? "The first run downloads KB Whisper and Qwen into the browser cache. Later runs reuse the cached models."
+        ? `${effectivePlan.profileLabel}. The first run downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label} into the browser cache. Later runs reuse the cached models.`
         : "The first run downloads KB Whisper into the browser cache. Note drafting falls back to a local template on this browser.",
       badge: localCapability.webgpu ? "Ready for download" : "Whisper only",
       progress: null,
@@ -147,10 +300,76 @@ function setExecutionMode(mode, { persist = true } = {}) {
     }
     hideLocalProgress();
   }
+
+  renderLocalModelSummary();
 }
 
 function getExecutionMode() {
   return localStorage.getItem(STORAGE_KEYS.executionMode) || DEFAULTS.mode;
+}
+
+function getEffectiveLocalModelPlan() {
+  const noteModel = resolveNoteModel();
+  const whisperModel = resolveWhisperModel();
+  return {
+    noteModel,
+    transcription: {
+      webgpu: whisperModel,
+      wasm: whisperModel.id === "KBLab/kb-whisper-small"
+        ? WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"]
+        : whisperModel,
+    },
+    profileLabel: localModelSettings.noteModel === "auto" && localModelSettings.whisperModel === "auto"
+      ? detectedLocalModelPlan.profileLabel
+      : "Manual local profile",
+  };
+}
+
+function resolveNoteModel() {
+  if (localModelSettings.noteModel === "custom" && localModelSettings.customNoteModel) {
+    return {
+      id: localModelSettings.customNoteModel,
+      label: localModelSettings.customNoteModel,
+      isCustom: true,
+    };
+  }
+
+  if (localModelSettings.noteModel !== "auto" && NOTE_MODEL_CATALOG[localModelSettings.noteModel]) {
+    return NOTE_MODEL_CATALOG[localModelSettings.noteModel];
+  }
+
+  return detectedLocalModelPlan.noteModel;
+}
+
+function resolveWhisperModel() {
+  if (localModelSettings.whisperModel === "custom" && localModelSettings.customWhisperModel) {
+    return {
+      id: localModelSettings.customWhisperModel,
+      label: localModelSettings.customWhisperModel,
+      subfolder: "onnx",
+      isCustom: true,
+    };
+  }
+
+  if (localModelSettings.whisperModel !== "auto" && WHISPER_MODEL_CATALOG[localModelSettings.whisperModel]) {
+    return WHISPER_MODEL_CATALOG[localModelSettings.whisperModel];
+  }
+
+  return detectedLocalModelPlan.transcription.webgpu;
+}
+
+function renderLocalModelSummary() {
+  const effectivePlan = getEffectiveLocalModelPlan();
+  modelSummary.textContent = `Local models: ${effectivePlan.noteModel.label} + ${effectivePlan.transcription.webgpu.label}`;
+}
+
+function updateSettingsProfileOutput() {
+  const effectivePlan = getEffectiveLocalModelPlan();
+  const capability = localCapability.webgpu ? "WebGPU available" : "WebGPU unavailable";
+  const modeDetailText = localCapability.webgpu
+    ? `${effectivePlan.profileLabel}. Qwen runs on WebGPU when the selected model has a compatible WebLLM / MLC build.`
+    : "This browser will use local Whisper and fall back to a deterministic note template because WebGPU is unavailable.";
+  settingsProfileOutput.textContent = `${capability}. ${modeDetailText} Current local choice: ${effectivePlan.noteModel.label} + ${effectivePlan.transcription.webgpu.label}.`;
 }
 
 function updateCapabilityPill() {
@@ -255,6 +474,7 @@ async function processRecording() {
 }
 
 async function processLocally() {
+  const effectivePlan = getEffectiveLocalModelPlan();
   const monoAudio = await decodeAudioBlobToMonoFloat32(recordedBlob, 16000);
   quotaCard.hidden = true;
   showLocalProgress({
@@ -273,6 +493,9 @@ async function processLocally() {
       audioBuffer: monoAudio.buffer,
       supportsWebGPU: localCapability.webgpu,
       language: (languageInput.value || "sv").trim(),
+      transcriptionModel: localCapability.webgpu
+        ? effectivePlan.transcription.webgpu
+        : effectivePlan.transcription.wasm,
     },
     [monoAudio.buffer],
   );
@@ -283,7 +506,7 @@ async function processLocally() {
   updateStatus(
     localCapability.webgpu ? "Preparing local note model" : "Preparing local note",
     localCapability.webgpu
-      ? "Loading a compact local Qwen model in the browser."
+      ? `Loading ${effectivePlan.noteModel.label} in the browser.`
       : "Using a deterministic local note template because WebGPU is not available.",
   );
 
@@ -293,6 +516,7 @@ async function processLocally() {
     locale: (localeInput.value || "sv-SE").trim(),
     language: (languageInput.value || "sv").trim(),
     supportsWebGPU: localCapability.webgpu,
+    noteModel: effectivePlan.noteModel,
   });
 
   renderResult({
@@ -674,4 +898,49 @@ function decorateLocalProgressDetail(payload) {
     return `${base} First local run may take a few minutes.`;
   }
   return base;
+}
+
+async function detectLocalModelPlan() {
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    const maxBuffer = Number(adapter?.limits?.maxStorageBufferBindingSize || 0);
+    const deviceMemory = Number(navigator.deviceMemory || 8);
+    const cores = Number(navigator.hardwareConcurrency || 4);
+    const isMobile = /iphone|ipad|android|mobile/i.test(navigator.userAgent || "");
+
+    if (!isMobile && deviceMemory >= 24 && maxBuffer >= 1_500_000_000) {
+      detectedLocalModelPlan = {
+        noteModel: NOTE_MODEL_CATALOG["Qwen3-4B-q4f16_1-MLC"],
+        transcription: {
+          webgpu: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-small"],
+          wasm: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"],
+        },
+        profileLabel: "High-memory desktop profile",
+      };
+      return;
+    }
+
+    if (deviceMemory >= 12 && cores >= 8 && maxBuffer >= 750_000_000) {
+      detectedLocalModelPlan = {
+        noteModel: NOTE_MODEL_CATALOG["Qwen3-1.7B-q4f16_1-MLC"],
+        transcription: {
+          webgpu: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"],
+          wasm: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"],
+        },
+        profileLabel: "Balanced WebGPU profile",
+      };
+      return;
+    }
+
+    detectedLocalModelPlan = {
+      noteModel: NOTE_MODEL_CATALOG["Qwen3-0.6B-q4f16_1-MLC"],
+      transcription: {
+        webgpu: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"],
+        wasm: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-tiny"],
+      },
+      profileLabel: "Lightweight WebGPU profile",
+    };
+  } catch {
+    detectedLocalModelPlan.profileLabel = "Default local profile";
+  }
 }

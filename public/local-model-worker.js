@@ -1,7 +1,7 @@
 import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 import * as webllm from "https://esm.run/@mlc-ai/web-llm@0.2.81";
 
-const TRANSCRIPTION_MODELS = {
+const DEFAULT_TRANSCRIPTION_MODELS = {
   webgpu: {
     id: "KBLab/kb-whisper-base",
     label: "KB Whisper Base",
@@ -14,7 +14,10 @@ const TRANSCRIPTION_MODELS = {
   },
 };
 
-const NOTE_MODEL = "Qwen3-0.6B-q4f16_1-MLC";
+const DEFAULT_NOTE_MODEL = {
+  id: "Qwen3-0.6B-q4f16_1-MLC",
+  label: "Qwen 3 0.6B",
+};
 
 const LANGUAGE_NAMES = {
   sv: "swedish",
@@ -70,11 +73,12 @@ async function transcribeLocally({
   audioBuffer,
   supportsWebGPU,
   language,
+  transcriptionModel,
 }) {
   const pipelineKey = supportsWebGPU ? "webgpu" : "wasm";
-  const transcriber = await getTranscriber(pipelineKey);
+  const selectedModel = normalizeTranscriptionModel(transcriptionModel, pipelineKey);
+  const transcriber = await getTranscriber(pipelineKey, selectedModel);
   const localizedLanguage = LANGUAGE_NAMES[String(language || "").toLowerCase()] || undefined;
-  const transcriptionModel = TRANSCRIPTION_MODELS[pipelineKey];
 
   postProgress({
     stage: "local-transcription",
@@ -82,8 +86,8 @@ async function transcribeLocally({
     state: "active",
     title: "Transcribing locally",
     detail: supportsWebGPU
-      ? `Running ${transcriptionModel.label} on WebGPU.`
-      : `Running ${transcriptionModel.label} with WebAssembly.`,
+      ? `Running ${selectedModel.label} on WebGPU.`
+      : `Running ${selectedModel.label} with WebAssembly.`,
   });
 
   let output;
@@ -102,7 +106,7 @@ async function transcribeLocally({
     }
 
     warning =
-      `${transcriptionModel.label} cannot extract word timestamps in this browser export, so Eir fell back to plain transcription text.`;
+      `${selectedModel.label} cannot extract word timestamps in this browser export, so Eir fell back to plain transcription text.`;
     postProgress({
       stage: "local-transcription",
       stepId: "transcription-run",
@@ -125,7 +129,7 @@ async function transcribeLocally({
     stepId: "transcription-run",
     state: "complete",
     title: "Transcription complete",
-    detail: `${transcriptionModel.label} finished transcription.`,
+    detail: `${selectedModel.label} finished transcription.`,
     progress: 1,
   });
 
@@ -134,8 +138,8 @@ async function transcribeLocally({
     chunks: output.chunks || [],
     warning,
     providerLabel: supportsWebGPU
-      ? `${transcriptionModel.label} (WebGPU)`
-      : `${transcriptionModel.label} (WASM)`,
+      ? `${selectedModel.label} (WebGPU)`
+      : `${selectedModel.label} (WASM)`,
   };
 }
 
@@ -145,6 +149,7 @@ async function draftNoteLocally({
   locale,
   language,
   supportsWebGPU,
+  noteModel,
 }) {
   if (!supportsWebGPU) {
     return {
@@ -154,13 +159,14 @@ async function draftNoteLocally({
     };
   }
 
-  const engine = await getLlmEngine();
+  const selectedNoteModel = normalizeNoteModel(noteModel);
+  const engine = await getLlmEngine(selectedNoteModel);
   postProgress({
     stage: "local-note",
     stepId: "note-run",
     state: "active",
     title: "Drafting locally",
-    detail: "Running Qwen in the browser on WebGPU. Waiting for the first tokens.",
+    detail: `Running ${selectedNoteModel.label} in the browser on WebGPU. Waiting for the first tokens.`,
   });
 
   const prompt = buildPrompt({ transcript, noteStyle, locale, language });
@@ -190,7 +196,7 @@ async function draftNoteLocally({
         stepId: "note-run",
         state: "active",
         title: "Drafting locally",
-        detail: "Qwen started generating tokens on WebGPU.",
+        detail: `${selectedNoteModel.label} started generating tokens on WebGPU.`,
       });
     }
 
@@ -216,22 +222,22 @@ async function draftNoteLocally({
     stepId: "note-run",
     state: "complete",
     title: "Draft ready",
-    detail: "Qwen finished drafting the note locally.",
+    detail: `${selectedNoteModel.label} finished drafting the note locally.`,
     progress: 1,
   });
 
   return {
     noteDraft,
-    providerLabel: `Local ${NOTE_MODEL}`,
+    providerLabel: `Local ${selectedNoteModel.id}`,
   };
 }
 
-async function getTranscriber(pipelineKey) {
-  if (transcriptionCache.pipeline && transcriptionCache.key === pipelineKey) {
+async function getTranscriber(pipelineKey, model) {
+  const cacheKey = `${pipelineKey}:${model.id}:${model.subfolder || ""}`;
+  if (transcriptionCache.pipeline && transcriptionCache.key === cacheKey) {
     return transcriptionCache.pipeline;
   }
 
-  const model = TRANSCRIPTION_MODELS[pipelineKey];
   postProgress({
     stage: "local-transcription",
     stepId: "transcription-download",
@@ -258,14 +264,14 @@ async function getTranscriber(pipelineKey) {
   });
 
   transcriptionCache = {
-    key: pipelineKey,
+    key: cacheKey,
     pipeline: transcriber,
   };
   return transcriber;
 }
 
-async function getLlmEngine() {
-  if (llmEngine && llmModelId === NOTE_MODEL) {
+async function getLlmEngine(model) {
+  if (llmEngine && llmModelId === model.id) {
     return llmEngine;
   }
 
@@ -274,21 +280,21 @@ async function getLlmEngine() {
     stepId: "note-download",
     state: "active",
     title: "Downloading local Qwen",
-    detail: "Preparing the local note model for browser inference.",
+    detail: `Preparing ${model.label} for browser inference.`,
   });
 
-  llmEngine = await webllm.CreateMLCEngine(NOTE_MODEL, {
+  llmEngine = await webllm.CreateMLCEngine(model.id, {
     initProgressCallback: (progress) => {
-      postNoteProgress(progress);
+      postNoteProgress(model, progress);
     },
   });
-  llmModelId = NOTE_MODEL;
+  llmModelId = model.id;
   postProgress({
     stage: "local-note",
     stepId: "note-load",
     state: "complete",
     title: "Qwen ready",
-    detail: "The local note model is loaded on WebGPU and ready to draft.",
+    detail: `${model.label} is loaded on WebGPU and ready to draft.`,
     progress: 1,
   });
   return llmEngine;
@@ -322,7 +328,7 @@ function postTranscriptionProgress(model, progress) {
   });
 }
 
-function postNoteProgress(progress) {
+function postNoteProgress(model, progress) {
   const progressValue = typeof progress.progress === "number"
     ? Math.max(0, Math.min(1, progress.progress))
     : null;
@@ -332,8 +338,8 @@ function postNoteProgress(progress) {
   const stepId = isDownload ? "note-download" : "note-load";
   const title = isDownload ? "Downloading local Qwen" : "Loading Qwen on WebGPU";
   const detail = progressValue === null
-    ? (text || NOTE_MODEL)
-    : `${text || NOTE_MODEL} ${Math.round(progressValue * 100)}%`;
+    ? (text || model.label)
+    : `${text || model.label} ${Math.round(progressValue * 100)}%`;
 
   postProgress({
     stage: "local-note",
@@ -406,9 +412,40 @@ function buildTemplateNote(transcript, noteStyle, locale) {
 function sanitizeLocalNoteOutput(text) {
   return String(text || "")
     .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*$/i, "")
     .replace(/^```[a-z]*\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
+}
+
+function normalizeTranscriptionModel(model, pipelineKey) {
+  if (model?.id) {
+    return {
+      id: model.id,
+      label: model.label || model.id,
+      subfolder: model.subfolder || "onnx",
+    };
+  }
+
+  return DEFAULT_TRANSCRIPTION_MODELS[pipelineKey];
+}
+
+function normalizeNoteModel(model) {
+  if (typeof model === "string" && model.trim()) {
+    return {
+      id: model.trim(),
+      label: model.trim(),
+    };
+  }
+
+  if (model?.id) {
+    return {
+      id: model.id,
+      label: model.label || model.id,
+    };
+  }
+
+  return DEFAULT_NOTE_MODEL;
 }
 
 function requiresAttentionFallback(error) {

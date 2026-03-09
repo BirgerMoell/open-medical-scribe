@@ -169,6 +169,8 @@ test("GET /app serves the branded recorder web app", async () => {
   assert.match(res.text, /Cloud access is prepared automatically the first time you transcribe\./i);
   assert.match(res.text, /Download Swedish Whisper/i);
   assert.match(res.text, /Local activity/i);
+  assert.match(res.text, /Choose local browser models/i);
+  assert.match(res.text, /Custom WebLLM \/ MLC model ID/i);
 });
 
 test("GET /local-model-worker.js serves the browser local-model worker", async () => {

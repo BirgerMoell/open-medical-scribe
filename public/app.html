@@ -24,6 +24,7 @@
         </a>
 
         <nav class="topnav app-topnav" aria-label="App links">
+          <button type="button" class="app-nav-button" id="open-settings-btn">Settings</button>
           <a href="/privacy-policy.html">Privacy</a>
           <a href="/support.html">Support</a>
           <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a>
@@ -88,6 +89,10 @@
             <div class="app-runtime-strip">
               <span class="status-pill" id="runtime-pill">Cloud default</span>
               <span class="status-pill muted" id="capability-pill">WebGPU checking</span>
+            </div>
+
+            <div class="app-model-summary" id="model-summary">
+              Local models: Auto
             </div>
 
             <section class="app-local-progress" id="local-progress-card" hidden aria-live="polite">
@@ -193,6 +198,66 @@
         </section>
       </main>
     </div>
+
+    <div class="app-sheet-backdrop" id="settings-backdrop" hidden></div>
+    <section class="app-settings-sheet" id="settings-sheet" hidden aria-labelledby="settings-title" aria-modal="true" role="dialog">
+      <div class="app-settings-head">
+        <div>
+          <p class="section-kicker">Local settings</p>
+          <h2 id="settings-title">Choose local browser models</h2>
+        </div>
+        <button type="button" class="button button-secondary app-sheet-close" id="close-settings-btn">Done</button>
+      </div>
+
+      <p class="app-settings-copy">
+        Latest Qwen 3.5 models on Hugging Face now span 0.8B, 2B, 4B, 9B, 27B, 35B-A3B, 122B-A10B, and 397B-A17B.
+        Eir defaults to browser-stable WebLLM Qwen presets today. Use Custom if you have a compatible MLC/WebLLM model ID.
+      </p>
+
+      <div class="app-settings-grid">
+        <label class="app-settings-field">
+          <span>Note model</span>
+          <select id="local-note-model-select">
+            <option value="auto">Auto (recommended)</option>
+            <option value="Qwen3-0.6B-q4f16_1-MLC">Qwen 3 0.6B</option>
+            <option value="Qwen3-1.7B-q4f16_1-MLC">Qwen 3 1.7B</option>
+            <option value="Qwen3-4B-q4f16_1-MLC">Qwen 3 4B</option>
+            <option value="custom">Custom WebLLM / MLC model ID</option>
+          </select>
+        </label>
+
+        <label class="app-settings-field app-settings-custom" id="custom-note-model-field" hidden>
+          <span>Custom note model ID</span>
+          <input id="custom-note-model-input" type="text" placeholder="your-org/Qwen3.5-4B-MLC-4bit" autocomplete="off" />
+        </label>
+
+        <label class="app-settings-field">
+          <span>Swedish Whisper model</span>
+          <select id="local-whisper-model-select">
+            <option value="auto">Auto (recommended)</option>
+            <option value="KBLab/kb-whisper-tiny">KB Whisper Tiny</option>
+            <option value="KBLab/kb-whisper-base">KB Whisper Base</option>
+            <option value="KBLab/kb-whisper-small">KB Whisper Small</option>
+            <option value="custom">Custom Hugging Face ONNX model ID</option>
+          </select>
+        </label>
+
+        <label class="app-settings-field app-settings-custom" id="custom-whisper-model-field" hidden>
+          <span>Custom Whisper model ID</span>
+          <input id="custom-whisper-model-input" type="text" placeholder="KBLab/kb-whisper-small" autocomplete="off" />
+        </label>
+      </div>
+
+      <div class="app-settings-status">
+        <p class="section-kicker">Detected profile</p>
+        <p id="settings-profile-output">Checking local browser capability.</p>
+      </div>
+
+      <div class="app-settings-actions">
+        <button type="button" class="button button-secondary" id="reset-model-settings-btn">Reset to auto</button>
+        <button type="button" class="button button-primary" id="save-model-settings-btn">Save local settings</button>
+      </div>
+    </section>
 
     <script type="module" src="/app.js"></script>
   </body>
