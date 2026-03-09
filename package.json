@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node src/index.js",
     "start:berget-cloud": "node scripts/start-berget-cloud.js",
+    "deploy:fly": "bash scripts/fly-deploy.sh",
     "dev": "node --watch src/index.js",
     "test": "node --test",
     "build:cli": "bun build --compile --target=bun --outfile=dist/scribe-transcribe cli/transcribe.js && bun build --compile --target=bun --outfile=dist/scribe-note cli/note.js",

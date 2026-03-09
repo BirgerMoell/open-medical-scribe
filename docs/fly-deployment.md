@@ -22,15 +22,25 @@ The repo already includes a deployable [fly.toml](/Users/birger/Community/open-m
 
 ## First deploy
 
+The repo includes a helper script in [fly-deploy.sh](/Users/birger/Community/open-medical-scribe/scripts/fly-deploy.sh).
+
 ```bash
 cd /Users/birger/Community/open-medical-scribe
 
-fly launch --no-deploy --copy-config --name eir-scribe-backend --region arn
-fly volumes create scribe_data --region arn --size 1
-fly secrets set \
-  API_BEARER_TOKEN=replace-with-a-long-random-token \
-  BERGET_API_KEY=replace-with-your-berget-key
-fly deploy
+export BERGET_API_KEY=replace-with-your-berget-key
+export API_BEARER_TOKEN=replace-with-a-long-random-token
+
+npm run deploy:fly
+```
+
+If you want to override the defaults, the script accepts:
+
+```bash
+FLY_APP_NAME=eir-scribe-backend \
+FLY_REGION=arn \
+FLY_VOLUME_NAME=scribe_data \
+EIR_SCRIBE_DOMAIN=scribe.eir.space \
+npm run deploy:fly
 ```
 
 ## DNS and TLS
@@ -38,7 +48,7 @@ fly deploy
 After the Fly app is reachable, bind the production hostname:
 
 ```bash
-fly certs add scribe.eir.space
+fly certs add scribe.eir.space --app eir-scribe-backend
 ```
 
 Then point DNS for `scribe.eir.space` to the Fly target the same way the existing `eir.space` services are managed.
