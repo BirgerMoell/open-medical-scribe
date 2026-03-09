@@ -90,6 +90,30 @@
               <span class="status-pill muted" id="capability-pill">WebGPU checking</span>
             </div>
 
+            <section class="app-local-progress" id="local-progress-card" hidden aria-live="polite">
+              <div class="app-local-progress-head">
+                <div>
+                  <p class="section-kicker">Local activity</p>
+                  <h2 id="local-progress-title">Preparing local models</h2>
+                </div>
+                <span class="status-pill muted" id="local-progress-badge">Waiting</span>
+              </div>
+              <p class="app-local-progress-detail" id="local-progress-detail">
+                The first local run downloads model files into the browser cache.
+              </p>
+              <div class="app-progress-bar" aria-hidden="true">
+                <span id="local-progress-fill"></span>
+              </div>
+              <ol class="app-stage-list" id="local-stage-list">
+                <li data-stage-id="transcription-download">Download Swedish Whisper</li>
+                <li data-stage-id="transcription-load">Load Whisper runtime</li>
+                <li data-stage-id="transcription-run">Transcribe audio</li>
+                <li data-stage-id="note-download">Download Qwen</li>
+                <li data-stage-id="note-load">Load Qwen on WebGPU</li>
+                <li data-stage-id="note-run">Draft note</li>
+              </ol>
+            </section>
+
             <button type="button" class="app-record-button" id="record-btn" aria-label="Start recording">
               <span class="app-record-ring"></span>
               <span class="app-record-core">

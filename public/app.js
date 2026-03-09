@@ -19,6 +19,12 @@ const modeLocalButton = document.getElementById("mode-local");
 const modeDetail = document.getElementById("mode-detail");
 const runtimePill = document.getElementById("runtime-pill");
 const capabilityPill = document.getElementById("capability-pill");
+const localProgressCard = document.getElementById("local-progress-card");
+const localProgressTitle = document.getElementById("local-progress-title");
+const localProgressBadge = document.getElementById("local-progress-badge");
+const localProgressDetail = document.getElementById("local-progress-detail");
+const localProgressFill = document.getElementById("local-progress-fill");
+const localStageList = document.getElementById("local-stage-list");
 
 const STORAGE_KEYS = {
   installId: "eirScribe.installId",
@@ -45,6 +51,25 @@ const pendingWorkerRequests = new Map();
 const localCapability = {
   webgpu: typeof navigator !== "undefined" && !!navigator.gpu,
   mediaRecorder: typeof window !== "undefined" && typeof window.MediaRecorder !== "undefined",
+};
+
+const LOCAL_STAGE_ORDER = [
+  "transcription-download",
+  "transcription-load",
+  "transcription-run",
+  "note-download",
+  "note-load",
+  "note-run",
+];
+const localStageNodes = new Map(
+  Array.from(localStageList?.querySelectorAll("[data-stage-id]") || []).map((node) => [node.dataset.stageId, node]),
+);
+let currentLocalProgress = {
+  title: "Preparing local models",
+  detail: "The first local run downloads model files into the browser cache.",
+  progress: null,
+  state: "idle",
+  stepId: null,
 };
 
 recordButton.addEventListener("click", () => {
@@ -93,14 +118,24 @@ function setExecutionMode(mode, { persist = true } = {}) {
   if (normalizedMode === "local") {
     runtimePill.textContent = localCapability.webgpu ? "Local WebGPU" : "Local WASM";
     modeDetail.textContent = localCapability.webgpu
-      ? "Runs in your browser. First use downloads Whisper and a compact Qwen model, then reuses the browser cache."
-      : "Runs in your browser. Whisper stays local, but without WebGPU the note falls back to a deterministic local template.";
+      ? "Runs in your browser. First use downloads Swedish Whisper and a compact Qwen model, then reuses the browser cache."
+      : "Runs in your browser. Swedish Whisper stays local, but without WebGPU the note falls back to a deterministic local template.";
     if (!isRecording) {
       statusLabel.textContent = "Ready";
       statusDetail.textContent = localCapability.webgpu
-        ? "Local mode downloads models on first use, then transcribes and drafts in the browser."
-        : "Local mode transcribes in the browser. Without WebGPU, note drafting uses a local template.";
+        ? "Local mode downloads Swedish Whisper and Qwen on first use, then transcribes and drafts in the browser."
+        : "Local mode transcribes with Swedish Whisper in the browser. Without WebGPU, note drafting uses a local template.";
     }
+    showLocalProgress({
+      title: "Local model path",
+      detail: localCapability.webgpu
+        ? "The first run downloads KB Whisper and Qwen into the browser cache. Later runs reuse the cached models."
+        : "The first run downloads KB Whisper into the browser cache. Note drafting falls back to a local template on this browser.",
+      badge: localCapability.webgpu ? "Ready for download" : "Whisper only",
+      progress: null,
+      stepId: null,
+      state: "idle",
+    });
   } else {
     runtimePill.textContent = "Cloud default";
     modeDetail.textContent =
@@ -110,6 +145,7 @@ function setExecutionMode(mode, { persist = true } = {}) {
       statusDetail.textContent =
         "Cloud access is prepared automatically the first time you transcribe.";
     }
+    hideLocalProgress();
   }
 }
 
@@ -205,13 +241,31 @@ async function processRecording() {
     updateStatus("Processing failed", "Check the message below and try again.");
     recordingPill.textContent = "Try again";
     providerPill.textContent = "Error";
+    if (getExecutionMode() === "local") {
+      showLocalProgress({
+        title: "Local processing failed",
+        detail: error.message || "The local model path failed before the draft completed.",
+        badge: "Error",
+        progress: null,
+        stepId: currentLocalProgress.stepId,
+        state: "active",
+      });
+    }
   }
 }
 
 async function processLocally() {
   const monoAudio = await decodeAudioBlobToMonoFloat32(recordedBlob, 16000);
   quotaCard.hidden = true;
-  updateStatus("Preparing local transcription", "Loading local Whisper in the browser.");
+  showLocalProgress({
+    title: "Preparing local transcription",
+    detail: "Checking the local browser cache and preparing Swedish Whisper.",
+    badge: "Starting",
+    progress: 0.02,
+    stepId: "transcription-download",
+    state: "active",
+  });
+  updateStatus("Preparing local transcription", "Loading Swedish Whisper in the browser.");
 
   const transcription = await sendWorkerRequest(
     "transcribe",
@@ -257,6 +311,16 @@ async function processLocally() {
       ? "Review the browser-local draft carefully before clinical use."
       : "Review the local template draft carefully before clinical use.",
   );
+  showLocalProgress({
+    title: "Local draft ready",
+    detail: localCapability.webgpu
+      ? "Swedish Whisper and Qwen are now cached in this browser for faster later runs."
+      : "Swedish Whisper is cached in this browser. Note drafting used the local template fallback.",
+    badge: "Ready",
+    progress: 1,
+    stepId: localCapability.webgpu ? "note-run" : "transcription-run",
+    state: "complete",
+  });
 }
 
 async function processInCloud() {
@@ -505,9 +569,16 @@ function handleWorkerMessage(event) {
     providerPill.textContent = payload.stage === "local-note"
       ? "Local note model"
       : "Local transcription";
-    if (typeof payload.progress === "number") {
-      recordingPill.textContent = `${Math.round(payload.progress * 100)}%`;
-    }
+    const badge = formatLocalProgressBadge(payload);
+    recordingPill.textContent = badge;
+    showLocalProgress({
+      title: payload.title || "Preparing local models",
+      detail: decorateLocalProgressDetail(payload),
+      badge,
+      progress: payload.progress,
+      stepId: payload.stepId || null,
+      state: payload.state || "active",
+    });
     return;
   }
 
@@ -533,4 +604,74 @@ function sendWorkerRequest(type, payload, transfer = []) {
     pendingWorkerRequests.set(id, { resolve, reject });
     worker.postMessage({ id, type, payload }, transfer);
   });
+}
+
+function showLocalProgress({
+  title,
+  detail,
+  badge,
+  progress,
+  stepId,
+  state,
+}) {
+  localProgressCard.hidden = false;
+  currentLocalProgress = {
+    title,
+    detail,
+    progress,
+    stepId,
+    state,
+  };
+  localProgressTitle.textContent = title;
+  localProgressBadge.textContent = badge;
+  localProgressDetail.textContent = detail;
+  localProgressFill.style.width = `${progressWidth(progress, state)}%`;
+  renderLocalStageStates(stepId, state);
+}
+
+function hideLocalProgress() {
+  localProgressCard.hidden = true;
+}
+
+function renderLocalStageStates(activeStepId, state) {
+  const activeIndex = activeStepId ? LOCAL_STAGE_ORDER.indexOf(activeStepId) : -1;
+  for (const [stageId, node] of localStageNodes.entries()) {
+    node.classList.remove("is-active", "is-complete");
+    const stageIndex = LOCAL_STAGE_ORDER.indexOf(stageId);
+    if (activeIndex === -1) {
+      continue;
+    }
+    if (stageIndex < activeIndex || (stageIndex === activeIndex && state === "complete")) {
+      node.classList.add("is-complete");
+      continue;
+    }
+    if (stageId === activeStepId && state !== "complete") {
+      node.classList.add("is-active");
+    }
+  }
+}
+
+function progressWidth(progress, state) {
+  if (typeof progress === "number") {
+    return Math.max(6, Math.min(100, progress * 100));
+  }
+  return state === "complete" ? 100 : 12;
+}
+
+function formatLocalProgressBadge(payload) {
+  if (payload.state === "complete") {
+    return "Done";
+  }
+  if (typeof payload.progress === "number") {
+    return `${Math.round(payload.progress * 100)}%`;
+  }
+  return "Working";
+}
+
+function decorateLocalProgressDetail(payload) {
+  const base = payload.detail || "";
+  if (payload.stepId === "note-download" || payload.stepId === "transcription-download") {
+    return `${base} First local run may take a few minutes.`;
+  }
+  return base;
 }

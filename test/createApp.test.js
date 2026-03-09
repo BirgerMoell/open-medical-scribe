@@ -167,6 +167,8 @@ test("GET /app serves the branded recorder web app", async () => {
   assert.equal(res.statusCode, 200);
   assert.match(res.text, /One recording\. One secure cloud draft\./);
   assert.match(res.text, /Cloud access is prepared automatically the first time you transcribe\./i);
+  assert.match(res.text, /Download Swedish Whisper/i);
+  assert.match(res.text, /Local activity/i);
 });
 
 test("GET /local-model-worker.js serves the browser local-model worker", async () => {

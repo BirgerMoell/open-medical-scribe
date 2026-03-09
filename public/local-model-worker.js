@@ -2,8 +2,16 @@ import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers
 import * as webllm from "https://esm.run/@mlc-ai/web-llm@0.2.81";
 
 const TRANSCRIPTION_MODELS = {
-  webgpu: "Xenova/whisper-small",
-  wasm: "Xenova/whisper-tiny",
+  webgpu: {
+    id: "KBLab/kb-whisper-base",
+    label: "KB Whisper Base",
+    subfolder: "onnx",
+  },
+  wasm: {
+    id: "KBLab/kb-whisper-tiny",
+    label: "KB Whisper Tiny",
+    subfolder: "onnx",
+  },
 };
 
 const NOTE_MODEL = "Qwen3-0.6B-q4f16_1-MLC";
@@ -66,10 +74,17 @@ async function transcribeLocally({
   const pipelineKey = supportsWebGPU ? "webgpu" : "wasm";
   const transcriber = await getTranscriber(pipelineKey);
   const localizedLanguage = LANGUAGE_NAMES[String(language || "").toLowerCase()] || undefined;
+  const transcriptionModel = TRANSCRIPTION_MODELS[pipelineKey];
 
-  postProgress("local-transcription", "Transcribing locally", supportsWebGPU
-    ? "Running Whisper in the browser with WebGPU."
-    : "Running Whisper in the browser with WebAssembly.");
+  postProgress({
+    stage: "local-transcription",
+    stepId: "transcription-run",
+    state: "active",
+    title: "Transcribing locally",
+    detail: supportsWebGPU
+      ? `Running ${transcriptionModel.label} on WebGPU.`
+      : `Running ${transcriptionModel.label} with WebAssembly.`,
+  });
 
   const output = await transcriber(new Float32Array(audioBuffer), {
     return_timestamps: "word",
@@ -79,10 +94,21 @@ async function transcribeLocally({
     ...(localizedLanguage ? { language: localizedLanguage } : {}),
   });
 
+  postProgress({
+    stage: "local-transcription",
+    stepId: "transcription-run",
+    state: "complete",
+    title: "Transcription complete",
+    detail: `${transcriptionModel.label} finished transcription.`,
+    progress: 1,
+  });
+
   return {
     text: output.text || "",
     chunks: output.chunks || [],
-    providerLabel: supportsWebGPU ? "Local Whisper (WebGPU)" : "Local Whisper (WASM)",
+    providerLabel: supportsWebGPU
+      ? `${transcriptionModel.label} (WebGPU)`
+      : `${transcriptionModel.label} (WASM)`,
   };
 }
 
@@ -102,7 +128,13 @@ async function draftNoteLocally({
   }
 
   const engine = await getLlmEngine();
-  postProgress("local-note", "Drafting locally", "Running Qwen in the browser on WebGPU.");
+  postProgress({
+    stage: "local-note",
+    stepId: "note-run",
+    state: "active",
+    title: "Drafting locally",
+    detail: "Running Qwen in the browser on WebGPU.",
+  });
 
   const prompt = buildPrompt({ transcript, noteStyle, locale, language });
   const response = await engine.chat.completions.create({
@@ -123,6 +155,15 @@ async function draftNoteLocally({
 
   const noteDraft = String(parsed.noteDraft || "").trim() || buildTemplateNote(transcript, noteStyle, locale);
 
+  postProgress({
+    stage: "local-note",
+    stepId: "note-run",
+    state: "complete",
+    title: "Draft ready",
+    detail: "Qwen finished drafting the note locally.",
+    progress: 1,
+  });
+
   return {
     noteDraft,
     providerLabel: `Local ${NOTE_MODEL}`,
@@ -135,17 +176,29 @@ async function getTranscriber(pipelineKey) {
   }
 
   const model = TRANSCRIPTION_MODELS[pipelineKey];
-  postProgress(
-    "local-transcription",
-    "Preparing local transcription",
-    `Loading ${model} for browser transcription.`,
-  );
+  postProgress({
+    stage: "local-transcription",
+    stepId: "transcription-download",
+    state: "active",
+    title: "Downloading Swedish Whisper",
+    detail: `Preparing ${model.label} for browser-local transcription.`,
+  });
 
-  const transcriber = await pipeline("automatic-speech-recognition", model, {
+  const transcriber = await pipeline("automatic-speech-recognition", model.id, {
     device: pipelineKey === "webgpu" ? "webgpu" : undefined,
+    subfolder: model.subfolder,
     progress_callback: (progress) => {
-      postModelProgress("local-transcription", progress);
+      postTranscriptionProgress(model, progress);
     },
+  });
+
+  postProgress({
+    stage: "local-transcription",
+    stepId: "transcription-load",
+    state: "complete",
+    title: "Whisper ready",
+    detail: `${model.label} is loaded and warm in the browser cache.`,
+    progress: 1,
   });
 
   transcriptionCache = {
@@ -160,56 +213,99 @@ async function getLlmEngine() {
     return llmEngine;
   }
 
-  postProgress("local-note", "Preparing local note model", `Loading ${NOTE_MODEL}.`);
+  postProgress({
+    stage: "local-note",
+    stepId: "note-download",
+    state: "active",
+    title: "Downloading local Qwen",
+    detail: "Preparing the local note model for browser inference.",
+  });
+
   llmEngine = await webllm.CreateMLCEngine(NOTE_MODEL, {
     initProgressCallback: (progress) => {
-      const progressValue = typeof progress.progress === "number"
-        ? Math.max(0, Math.min(1, progress.progress))
-        : null;
-      postMessage({
-        type: "progress",
-        payload: {
-          stage: "local-note",
-          title: progress.text || "Preparing local note model",
-          detail: progressValue === null ? NOTE_MODEL : `${NOTE_MODEL} ${Math.round(progressValue * 100)}%`,
-          progress: progressValue,
-        },
-      });
+      postNoteProgress(progress);
     },
   });
   llmModelId = NOTE_MODEL;
+  postProgress({
+    stage: "local-note",
+    stepId: "note-load",
+    state: "complete",
+    title: "Qwen ready",
+    detail: "The local note model is loaded on WebGPU and ready to draft.",
+    progress: 1,
+  });
   return llmEngine;
 }
 
-function postModelProgress(stage, progress) {
+function postTranscriptionProgress(model, progress) {
   const progressValue = typeof progress.progress === "number"
     ? Math.max(0, Math.min(1, progress.progress))
     : null;
 
-  let detail = progress.file || progress.name || progress.status || "Downloading model assets";
+  const statusText = String(progress.status || "").toLowerCase();
+  const isReady = statusText === "ready";
+  const stepId = isReady
+    ? "transcription-load"
+    : "transcription-download";
+  const title = isReady
+    ? "Loading Whisper runtime"
+    : "Downloading Swedish Whisper";
+  let detail = progress.file || progress.name || progress.status || `Preparing ${model.label}`;
   if (progressValue !== null) {
     detail = `${detail} ${Math.round(progressValue * 100)}%`;
   }
 
-  postMessage({
-    type: "progress",
-    payload: {
-      stage,
-      title: stage === "local-transcription" ? "Preparing local transcription" : "Preparing local model",
-      detail,
-      progress: progressValue,
-    },
+  postProgress({
+    stage: "local-transcription",
+    stepId,
+    state: isReady ? "complete" : "active",
+    title,
+    detail,
+    progress: progressValue,
   });
 }
 
-function postProgress(stage, title, detail) {
+function postNoteProgress(progress) {
+  const progressValue = typeof progress.progress === "number"
+    ? Math.max(0, Math.min(1, progress.progress))
+    : null;
+  const text = String(progress.text || "");
+  const lowerText = text.toLowerCase();
+  const isDownload = lowerText.includes("download") || lowerText.includes("fetch");
+  const stepId = isDownload ? "note-download" : "note-load";
+  const title = isDownload ? "Downloading local Qwen" : "Loading Qwen on WebGPU";
+  const detail = progressValue === null
+    ? (text || NOTE_MODEL)
+    : `${text || NOTE_MODEL} ${Math.round(progressValue * 100)}%`;
+
+  postProgress({
+    stage: "local-note",
+    stepId,
+    state: progressValue === 1 ? "complete" : "active",
+    title,
+    detail,
+    progress: progressValue,
+  });
+}
+
+function postProgress({
+  stage,
+  stepId,
+  state,
+  title,
+  detail,
+  progress = null,
+}) {
   postMessage({
     type: "progress",
     payload: {
       stage,
+      stepId,
+      state,
       title,
       detail,
-      progress: null,
+      progress,
     },
   });
 }
