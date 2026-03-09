@@ -18,6 +18,11 @@ const DEFAULT_NOTE_MODEL = {
   id: "Qwen3-0.6B-q4f16_1-MLC",
   label: "Qwen 3 0.6B",
 };
+const PREBUILT_WEBLLM_MODEL_IDS = new Set(
+  Array.isArray(webllm.prebuiltAppConfig?.model_list)
+    ? webllm.prebuiltAppConfig.model_list.map((record) => record.model_id)
+    : [],
+);
 
 const LANGUAGE_NAMES = {
   sv: "swedish",
@@ -91,7 +96,6 @@ async function transcribeLocally({
   });
 
   let output;
-  let warning = null;
   try {
     output = await transcriber(new Float32Array(audioBuffer), {
       return_timestamps: "word",
@@ -105,8 +109,6 @@ async function transcribeLocally({
       throw error;
     }
 
-    warning =
-      `${selectedModel.label} cannot extract word timestamps in this browser export, so Eir fell back to plain transcription text.`;
     postProgress({
       stage: "local-transcription",
       stepId: "transcription-run",
@@ -136,7 +138,6 @@ async function transcribeLocally({
   return {
     text: output.text || "",
     chunks: output.chunks || [],
-    warning,
     providerLabel: supportsWebGPU
       ? `${selectedModel.label} (WebGPU)`
       : `${selectedModel.label} (WASM)`,
@@ -273,6 +274,16 @@ async function getTranscriber(pipelineKey, model) {
 async function getLlmEngine(model) {
   if (llmEngine && llmModelId === model.id) {
     return llmEngine;
+  }
+
+  if (model.requiresCustomBuild) {
+    throw new Error(
+      `${model.label} needs a compiled WebLLM / MLC browser build. The raw Hugging Face checkpoint cannot run directly in this web app yet.`,
+    );
+  }
+
+  if (!model.isCustom && !PREBUILT_WEBLLM_MODEL_IDS.has(model.id)) {
+    throw new Error(`${model.label} is not available in the current browser runtime.`);
   }
 
   postProgress({
@@ -435,6 +446,7 @@ function normalizeNoteModel(model) {
     return {
       id: model.trim(),
       label: model.trim(),
+      isCustom: true,
     };
   }
 
@@ -442,6 +454,8 @@ function normalizeNoteModel(model) {
     return {
       id: model.id,
       label: model.label || model.id,
+      isCustom: Boolean(model.isCustom),
+      requiresCustomBuild: Boolean(model.requiresCustomBuild),
     };
   }
 

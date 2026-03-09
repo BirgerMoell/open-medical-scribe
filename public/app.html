@@ -95,29 +95,21 @@
               Local models: Auto
             </div>
 
-            <section class="app-local-progress" id="local-progress-card" hidden aria-live="polite">
-              <div class="app-local-progress-head">
-                <div>
-                  <p class="section-kicker">Local activity</p>
-                  <h2 id="local-progress-title">Preparing local models</h2>
+            <details class="app-local-activity" id="local-activity" hidden>
+              <summary>Local activity</summary>
+              <section class="app-local-progress" id="local-progress-card" aria-live="polite">
+                <div class="app-local-progress-head">
+                  <div>
+                    <p class="section-kicker">Local activity</p>
+                    <h2 id="local-progress-title">Preparing local models</h2>
+                  </div>
+                  <span class="status-pill muted" id="local-progress-badge">Waiting</span>
                 </div>
-                <span class="status-pill muted" id="local-progress-badge">Waiting</span>
-              </div>
-              <p class="app-local-progress-detail" id="local-progress-detail">
-                The first local run downloads model files into the browser cache.
-              </p>
-              <div class="app-progress-bar" aria-hidden="true">
-                <span id="local-progress-fill"></span>
-              </div>
-              <ol class="app-stage-list" id="local-stage-list">
-                <li data-stage-id="transcription-download">Download Swedish Whisper</li>
-                <li data-stage-id="transcription-load">Load Whisper runtime</li>
-                <li data-stage-id="transcription-run">Transcribe audio</li>
-                <li data-stage-id="note-download">Download Qwen</li>
-                <li data-stage-id="note-load">Load Qwen on WebGPU</li>
-                <li data-stage-id="note-run">Draft note</li>
-              </ol>
-            </section>
+                <p class="app-local-progress-detail" id="local-progress-detail">
+                  The first local run downloads model files into the browser cache.
+                </p>
+              </section>
+            </details>
 
             <button type="button" class="app-record-button" id="record-btn" aria-label="Start recording">
               <span class="app-record-ring"></span>
@@ -211,7 +203,8 @@
 
       <p class="app-settings-copy">
         Latest Qwen 3.5 models on Hugging Face now span 0.8B, 2B, 4B, 9B, 27B, 35B-A3B, 122B-A10B, and 397B-A17B.
-        Eir defaults to browser-stable WebLLM Qwen presets today. Use Custom if you have a compatible MLC/WebLLM model ID.
+        The current browser runtime ships browser-ready Qwen 3 presets up to 8B. Raw Qwen 3.5 checkpoints still need a
+        compiled WebLLM / MLC build, so Eir keeps them as custom-build targets rather than pretending they are ready.
       </p>
 
       <div class="app-settings-grid">
@@ -222,6 +215,9 @@
             <option value="Qwen3-0.6B-q4f16_1-MLC">Qwen 3 0.6B</option>
             <option value="Qwen3-1.7B-q4f16_1-MLC">Qwen 3 1.7B</option>
             <option value="Qwen3-4B-q4f16_1-MLC">Qwen 3 4B</option>
+            <option value="Qwen3-8B-q4f16_1-MLC">Qwen 3 8B</option>
+            <option value="Qwen/Qwen3.5-9B">Qwen 3.5 9B (custom WebLLM build)</option>
+            <option value="Qwen/Qwen3.5-27B">Qwen 3.5 27B (custom WebLLM build)</option>
             <option value="custom">Custom WebLLM / MLC model ID</option>
           </select>
         </label>
@@ -238,6 +234,7 @@
             <option value="KBLab/kb-whisper-tiny">KB Whisper Tiny</option>
             <option value="KBLab/kb-whisper-base">KB Whisper Base</option>
             <option value="KBLab/kb-whisper-small">KB Whisper Small</option>
+            <option value="onnx-community/kb-whisper-large-ONNX">KB Whisper Large ONNX</option>
             <option value="custom">Custom Hugging Face ONNX model ID</option>
           </select>
         </label>

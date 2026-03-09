@@ -20,12 +20,11 @@ const modeDetail = document.getElementById("mode-detail");
 const runtimePill = document.getElementById("runtime-pill");
 const capabilityPill = document.getElementById("capability-pill");
 const modelSummary = document.getElementById("model-summary");
+const localActivity = document.getElementById("local-activity");
 const localProgressCard = document.getElementById("local-progress-card");
 const localProgressTitle = document.getElementById("local-progress-title");
 const localProgressBadge = document.getElementById("local-progress-badge");
 const localProgressDetail = document.getElementById("local-progress-detail");
-const localProgressFill = document.getElementById("local-progress-fill");
-const localStageList = document.getElementById("local-stage-list");
 const openSettingsButton = document.getElementById("open-settings-btn");
 const closeSettingsButton = document.getElementById("close-settings-btn");
 const settingsBackdrop = document.getElementById("settings-backdrop");
@@ -87,6 +86,20 @@ const NOTE_MODEL_CATALOG = {
     id: "Qwen3-4B-q4f16_1-MLC",
     label: "Qwen 3 4B",
   },
+  "Qwen3-8B-q4f16_1-MLC": {
+    id: "Qwen3-8B-q4f16_1-MLC",
+    label: "Qwen 3 8B",
+  },
+  "Qwen/Qwen3.5-9B": {
+    id: "Qwen/Qwen3.5-9B",
+    label: "Qwen 3.5 9B",
+    requiresCustomBuild: true,
+  },
+  "Qwen/Qwen3.5-27B": {
+    id: "Qwen/Qwen3.5-27B",
+    label: "Qwen 3.5 27B",
+    requiresCustomBuild: true,
+  },
 };
 
 const WHISPER_MODEL_CATALOG = {
@@ -105,6 +118,11 @@ const WHISPER_MODEL_CATALOG = {
     label: "KB Whisper Small",
     subfolder: "onnx",
   },
+  "onnx-community/kb-whisper-large-ONNX": {
+    id: "onnx-community/kb-whisper-large-ONNX",
+    label: "KB Whisper Large ONNX",
+    subfolder: "onnx",
+  },
 };
 
 let detectedLocalModelPlan = {
@@ -120,23 +138,10 @@ let localModelSettings = {
   ...DEFAULTS.localModelSettings,
 };
 
-const LOCAL_STAGE_ORDER = [
-  "transcription-download",
-  "transcription-load",
-  "transcription-run",
-  "note-download",
-  "note-load",
-  "note-run",
-];
-const localStageNodes = new Map(
-  Array.from(localStageList?.querySelectorAll("[data-stage-id]") || []).map((node) => [node.dataset.stageId, node]),
-);
 let currentLocalProgress = {
   title: "Preparing local models",
   detail: "The first local run downloads model files into the browser cache.",
-  progress: null,
   state: "idle",
-  stepId: null,
 };
 
 recordButton.addEventListener("click", () => {
@@ -270,23 +275,28 @@ function setExecutionMode(mode, { persist = true } = {}) {
 
   if (normalizedMode === "local") {
     runtimePill.textContent = localCapability.webgpu ? "Local WebGPU" : "Local WASM";
-    modeDetail.textContent = localCapability.webgpu
-      ? `Runs in your browser. First use downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label}, then reuses the browser cache.`
-      : "Runs in your browser. Swedish Whisper stays local, but without WebGPU the note falls back to a deterministic local template.";
+    if (localCapability.webgpu && effectivePlan.noteModel.requiresCustomBuild) {
+      modeDetail.textContent =
+        `${effectivePlan.noteModel.label} needs a custom WebLLM / MLC browser build. Choose a browser-ready Qwen preset or keep this selection only if you have that build.`;
+    } else {
+      modeDetail.textContent = localCapability.webgpu
+        ? `Runs in your browser. First use downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label}, then reuses the browser cache.`
+        : "Runs in your browser. Swedish Whisper stays local, but without WebGPU the note falls back to a deterministic local template.";
+    }
     if (!isRecording) {
       statusLabel.textContent = "Ready";
       statusDetail.textContent = localCapability.webgpu
-        ? `Local mode downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label} on first use, then transcribes and drafts in the browser.`
+        ? effectivePlan.noteModel.requiresCustomBuild
+          ? `This selection needs a custom browser build for ${effectivePlan.noteModel.label}.`
+          : `Local mode downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label} on first use, then drafts in the browser.`
         : "Local mode transcribes with Swedish Whisper in the browser. Without WebGPU, note drafting uses a local template.";
     }
     showLocalProgress({
       title: "Local model path",
       detail: localCapability.webgpu
-        ? `${effectivePlan.profileLabel}. The first run downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label} into the browser cache. Later runs reuse the cached models.`
+        ? `${effectivePlan.profileLabel}. The first run downloads ${effectivePlan.transcription.webgpu.label} and ${effectivePlan.noteModel.label}. Later runs reuse the browser cache.`
         : "The first run downloads KB Whisper into the browser cache. Note drafting falls back to a local template on this browser.",
-      badge: localCapability.webgpu ? "Ready for download" : "Whisper only",
-      progress: null,
-      stepId: null,
+      badge: localCapability.webgpu ? "Ready" : "Whisper only",
       state: "idle",
     });
   } else {
@@ -315,7 +325,9 @@ function getEffectiveLocalModelPlan() {
     noteModel,
     transcription: {
       webgpu: whisperModel,
-      wasm: whisperModel.id === "KBLab/kb-whisper-small"
+      wasm: whisperModel.id === "onnx-community/kb-whisper-large-ONNX"
+        ? WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"]
+        : whisperModel.id === "KBLab/kb-whisper-small"
         ? WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"]
         : whisperModel,
     },
@@ -367,9 +379,13 @@ function updateSettingsProfileOutput() {
   const effectivePlan = getEffectiveLocalModelPlan();
   const capability = localCapability.webgpu ? "WebGPU available" : "WebGPU unavailable";
   const modeDetailText = localCapability.webgpu
-    ? `${effectivePlan.profileLabel}. Qwen runs on WebGPU when the selected model has a compatible WebLLM / MLC build.`
+    ? `${effectivePlan.profileLabel}. Browser-ready WebLLM presets currently cover Qwen 3 through 8B. Raw Qwen 3.5 checkpoints still need a compiled browser build.`
     : "This browser will use local Whisper and fall back to a deterministic note template because WebGPU is unavailable.";
-  settingsProfileOutput.textContent = `${capability}. ${modeDetailText} Current local choice: ${effectivePlan.noteModel.label} + ${effectivePlan.transcription.webgpu.label}.`;
+  const customBuildHint = effectivePlan.noteModel.requiresCustomBuild
+    ? ` ${effectivePlan.noteModel.label} is a raw Hugging Face release, so this selection needs a custom WebLLM / MLC browser build.`
+    : "";
+  settingsProfileOutput.textContent =
+    `${capability}. ${modeDetailText} Current local choice: ${effectivePlan.noteModel.label} + ${effectivePlan.transcription.webgpu.label}.${customBuildHint}`;
 }
 
 function updateCapabilityPill() {
@@ -430,7 +446,7 @@ function stopRecording() {
     updateStatus(
       "Preparing local models",
       localCapability.webgpu
-        ? "Eir is preparing browser-local Whisper and Qwen models."
+        ? "Preparing local transcription and note drafting in this browser."
         : "Eir is preparing browser-local Whisper. Drafting will use a local template.",
     );
   } else {
@@ -465,8 +481,6 @@ async function processRecording() {
         title: "Local processing failed",
         detail: error.message || "The local model path failed before the draft completed.",
         badge: "Error",
-        progress: null,
-        stepId: currentLocalProgress.stepId,
         state: "active",
       });
     }
@@ -479,10 +493,8 @@ async function processLocally() {
   quotaCard.hidden = true;
   showLocalProgress({
     title: "Preparing local transcription",
-    detail: "Checking the local browser cache and preparing Swedish Whisper.",
+    detail: "Preparing Swedish Whisper in this browser.",
     badge: "Starting",
-    progress: 0.02,
-    stepId: "transcription-download",
     state: "active",
   });
   updateStatus("Preparing local transcription", "Loading Swedish Whisper in the browser.");
@@ -541,8 +553,6 @@ async function processLocally() {
       ? "Swedish Whisper and Qwen are now cached in this browser for faster later runs."
       : "Swedish Whisper is cached in this browser. Note drafting used the local template fallback.",
     badge: "Ready",
-    progress: 1,
-    stepId: localCapability.webgpu ? "note-run" : "transcription-run",
     state: "complete",
   });
 }
@@ -799,8 +809,6 @@ function handleWorkerMessage(event) {
       title: payload.title || "Preparing local models",
       detail: decorateLocalProgressDetail(payload),
       badge,
-      progress: payload.progress,
-      stepId: payload.stepId || null,
       state: payload.state || "active",
     });
     return;
@@ -834,67 +842,36 @@ function showLocalProgress({
   title,
   detail,
   badge,
-  progress,
-  stepId,
   state,
 }) {
+  localActivity.hidden = false;
   localProgressCard.hidden = false;
   currentLocalProgress = {
     title,
     detail,
-    progress,
-    stepId,
     state,
   };
   localProgressTitle.textContent = title;
   localProgressBadge.textContent = badge;
   localProgressDetail.textContent = detail;
-  localProgressFill.style.width = `${progressWidth(progress, state)}%`;
-  renderLocalStageStates(stepId, state);
 }
 
 function hideLocalProgress() {
+  localActivity.hidden = true;
+  localActivity.open = false;
   localProgressCard.hidden = true;
-}
-
-function renderLocalStageStates(activeStepId, state) {
-  const activeIndex = activeStepId ? LOCAL_STAGE_ORDER.indexOf(activeStepId) : -1;
-  for (const [stageId, node] of localStageNodes.entries()) {
-    node.classList.remove("is-active", "is-complete");
-    const stageIndex = LOCAL_STAGE_ORDER.indexOf(stageId);
-    if (activeIndex === -1) {
-      continue;
-    }
-    if (stageIndex < activeIndex || (stageIndex === activeIndex && state === "complete")) {
-      node.classList.add("is-complete");
-      continue;
-    }
-    if (stageId === activeStepId && state !== "complete") {
-      node.classList.add("is-active");
-    }
-  }
-}
-
-function progressWidth(progress, state) {
-  if (typeof progress === "number") {
-    return Math.max(6, Math.min(100, progress * 100));
-  }
-  return state === "complete" ? 100 : 12;
 }
 
 function formatLocalProgressBadge(payload) {
   if (payload.state === "complete") {
-    return "Done";
+    return "Ready";
   }
-  if (typeof payload.progress === "number") {
-    return `${Math.round(payload.progress * 100)}%`;
-  }
-  return "Working";
+  return "Loading";
 }
 
 function decorateLocalProgressDetail(payload) {
   const base = payload.detail || "";
-  if (payload.stepId === "note-download" || payload.stepId === "transcription-download") {
+  if (payload.state !== "complete") {
     return `${base} First local run may take a few minutes.`;
   }
   return base;
@@ -908,7 +885,19 @@ async function detectLocalModelPlan() {
     const cores = Number(navigator.hardwareConcurrency || 4);
     const isMobile = /iphone|ipad|android|mobile/i.test(navigator.userAgent || "");
 
-    if (!isMobile && deviceMemory >= 24 && maxBuffer >= 1_500_000_000) {
+    if (!isMobile && deviceMemory >= 32 && maxBuffer >= 1_500_000_000) {
+      detectedLocalModelPlan = {
+        noteModel: NOTE_MODEL_CATALOG["Qwen3-8B-q4f16_1-MLC"],
+        transcription: {
+          webgpu: WHISPER_MODEL_CATALOG["onnx-community/kb-whisper-large-ONNX"],
+          wasm: WHISPER_MODEL_CATALOG["KBLab/kb-whisper-base"],
+        },
+        profileLabel: "High-memory desktop profile",
+      };
+      return;
+    }
+
+    if (!isMobile && deviceMemory >= 24 && maxBuffer >= 1_250_000_000) {
       detectedLocalModelPlan = {
         noteModel: NOTE_MODEL_CATALOG["Qwen3-4B-q4f16_1-MLC"],
         transcription: {
