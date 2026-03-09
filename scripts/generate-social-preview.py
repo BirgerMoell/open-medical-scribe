@@ -106,7 +106,7 @@ def main() -> None:
     panel_draw.text((28, 208), "Bedömning", font=load_font(FONT_BOLD, 20), fill="#1A1917")
     panel_draw.multiline_text(
         (28, 238),
-        "Övre luftvägsinfektion\nutan alarmsymtom.",
+        "Bild förenlig med övre\nluftvägsinfektion.\nInga alarmsymtom.",
         font=load_font(FONT_REGULAR, 22),
         fill="#3D3A36",
         spacing=8,
