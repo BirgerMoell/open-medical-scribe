@@ -65,6 +65,16 @@ final class ScribeViewModel: ObservableObject {
     ) {
         self.noteArchive = noteArchive
         self.savedEncounters = launchContext.isScreenshotMode ? [] : noteArchive.load()
+#if os(iOS)
+        migrateLegacyBackendURLIfNeeded()
+        if KeychainSecretStore.load(account: KeychainSecretStore.backendAPITokenAccount).isEmpty,
+           !PlatformDefaults.defaultBackendAPITokenString.isEmpty {
+            KeychainSecretStore.save(
+                PlatformDefaults.defaultBackendAPITokenString,
+                account: KeychainSecretStore.backendAPITokenAccount
+            )
+        }
+#endif
         if let scenario = launchContext.screenshotScenario {
             applyScreenshotScenario(scenario)
         }
@@ -304,6 +314,18 @@ final class ScribeViewModel: ObservableObject {
                     )
                 }
 
+                let backendBearerToken = preferredBackendBearerToken()
+                if requiresBackendBearerToken(baseURL), backendBearerToken.isEmpty {
+                    throw NSError(
+                        domain: "OpenMedicalScribeApple",
+                        code: 64,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "This Eir cloud backend requires a Backend API Token. Open Settings and paste the token into the 'Backend API Token' field."
+                        ]
+                    )
+                }
+
 #if os(iOS)
                 if baseURL.isFileURL == false, isLoopbackBackendURL(baseURL) {
                     throw NSError(
@@ -319,7 +341,7 @@ final class ScribeViewModel: ObservableObject {
 
                 result = try await client.scribeAudio(
                     baseURL: baseURL,
-                    bearerToken: preferredBackendBearerToken(),
+                    bearerToken: backendBearerToken,
                     audioURL: url,
                     language: language,
                     locale: locale,
@@ -731,7 +753,7 @@ final class ScribeViewModel: ObservableObject {
         language = "sv"
         locale = "sv-SE"
         country = "SE"
-        backendURLString = "https://eir-scribe.se"
+        backendURLString = "https://scribe.eir.space"
         serviceIsReady = true
         warnings = demo.currentEncounter.warnings
         transcriptionProvider = demo.currentEncounter.transcriptionProvider
@@ -909,6 +931,42 @@ final class ScribeViewModel: ObservableObject {
         ""
     }
 #endif
+
+    private func requiresBackendBearerToken(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else {
+            return false
+        }
+
+        return host == "eir-scribe-backend.fly.dev" || host == "scribe.eir.space"
+    }
+
+    private func migrateLegacyBackendURLIfNeeded() {
+#if os(iOS)
+        let legacyURL = "https://eir-scribe-backend.fly.dev"
+        guard PlatformDefaults.defaultBackendURLString == "https://scribe.eir.space" else {
+            return
+        }
+
+        let defaultsValue = UserDefaults.standard.string(forKey: PlatformDefaults.backendURLStringKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if defaultsValue == legacyURL {
+            UserDefaults.standard.set(
+                PlatformDefaults.defaultBackendURLString,
+                forKey: PlatformDefaults.backendURLStringKey
+            )
+        }
+
+        let keychainValue = KeychainSecretStore
+            .load(account: KeychainSecretStore.backendURLAccount)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if keychainValue == legacyURL {
+            KeychainSecretStore.save(
+                PlatformDefaults.defaultBackendURLString,
+                account: KeychainSecretStore.backendURLAccount
+            )
+        }
+#endif
+    }
 }
 
 private struct ScreenshotDemo {
@@ -1039,7 +1097,7 @@ private struct ScreenshotDemo {
             noteProvider: "Berget openai/gpt-oss-120b"
         )
         let logs = [
-            "[2026-03-06T08:40:12Z] Connected to backend at https://eir-scribe.se",
+            "[2026-03-06T08:40:12Z] Connected to backend at https://scribe.eir.space",
             "[2026-03-06T08:41:03Z] Recording started.",
             "[2026-03-06T08:42:18Z] Saved recording as besok-2026-03-06.m4a.",
             "[2026-03-06T08:42:19Z] Analyzed besok-2026-03-06.m4a with Berget kb-whisper-large + Berget openai/gpt-oss-120b"
@@ -1087,6 +1145,7 @@ enum RepositoryLocator {
 
 enum PlatformDefaults {
     static let backendURLStringKey = "openmedicalscribe.backendURLString"
+    static let backendAPITokenKey = "openmedicalscribe.backendAPIToken"
     static let initialBackendURLString: String = {
         let defaultsValue = UserDefaults.standard.string(forKey: backendURLStringKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -1103,11 +1162,34 @@ enum PlatformDefaults {
         return defaultsValue.isEmpty ? defaultBackendURLString : defaultsValue
 #endif
     }()
+    static let initialBackendAPITokenString: String = {
+#if os(iOS)
+        let defaultsValue = UserDefaults.standard.string(forKey: backendAPITokenKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !defaultsValue.isEmpty {
+            return defaultsValue
+        }
+
+        let keychainValue = KeychainSecretStore
+            .load(account: KeychainSecretStore.backendAPITokenAccount)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return keychainValue.isEmpty ? defaultBackendAPITokenString : keychainValue
+#else
+        ""
+#endif
+    }()
     static let defaultBackendURLString: String = {
 #if os(iOS)
         bundleConfiguredBackendURLString
 #else
         "http://127.0.0.1:8799"
+#endif
+    }()
+    static let defaultBackendAPITokenString: String = {
+#if os(iOS)
+        bundleConfiguredBackendAPITokenString
+#else
+        ""
 #endif
     }()
     static let defaultWhisperModel = "small"
@@ -1125,6 +1207,14 @@ enum PlatformDefaults {
     private static let bundleConfiguredBackendURLString: String = {
 #if os(iOS)
         (Bundle.main.object(forInfoDictionaryKey: "OMSDefaultBackendURL") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+#else
+        ""
+#endif
+    }()
+    private static let bundleConfiguredBackendAPITokenString: String = {
+#if os(iOS)
+        (Bundle.main.object(forInfoDictionaryKey: "OMSDefaultBackendAPIToken") as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 #else
         ""

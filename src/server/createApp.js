@@ -181,6 +181,10 @@ export function createApp({ config }) {
           if (serveStaticFile(res, "public/index.html")) return;
         }
 
+        if (config.enableWebUi && req.method === "GET" && req.url === "/app") {
+          if (serveStaticFile(res, "public/app.html")) return;
+        }
+
         if (config.enableWebUi && req.method === "GET" && req.url === "/app.js") {
           if (serveStaticFile(res, "public/app.js")) return;
         }
@@ -189,15 +193,35 @@ export function createApp({ config }) {
           if (serveStaticFile(res, "public/styles.css")) return;
         }
 
+        if (config.enableWebUi && req.method === "GET" && req.url === "/site.css") {
+          if (serveStaticFile(res, "public/site.css")) return;
+        }
+
+        if (config.enableWebUi && req.method === "GET" && req.url === "/site.js") {
+          if (serveStaticFile(res, "public/site.js")) return;
+        }
+
         if (config.enableWebUi && req.method === "GET" && req.url === "/stream.js") {
           if (serveStaticFile(res, "public/stream.js")) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/settings") {
+        if (config.enableWebUi && req.method === "GET" && req.url.startsWith("/brand/")) {
+          if (serveStaticFile(res, `public${req.url}`)) return;
+        }
+
+        if (config.enableWebUi && req.method === "GET" && req.url === "/privacy-policy.html") {
+          if (serveStaticFile(res, "docs/privacy-policy.html")) return;
+        }
+
+        if (config.enableWebUi && req.method === "GET" && req.url === "/support.html") {
+          if (serveStaticFile(res, "docs/support.html")) return;
+        }
+
+        if (config.enableWebUi && config.enableSettingsUi && req.method === "GET" && req.url === "/settings") {
           if (serveStaticFile(res, "public/settings.html")) return;
         }
 
-        if (config.enableWebUi && req.method === "GET" && req.url === "/settings.js") {
+        if (config.enableWebUi && config.enableSettingsUi && req.method === "GET" && req.url === "/settings.js") {
           if (serveStaticFile(res, "public/settings.js")) return;
         }
 

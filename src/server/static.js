@@ -6,6 +6,10 @@ const MIME_BY_EXT = {
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
 };
 
 export function serveStaticFile(res, filePath) {
@@ -22,4 +26,3 @@ export function serveStaticFile(res, filePath) {
     return false;
   }
 }
-

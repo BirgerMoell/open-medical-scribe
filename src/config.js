@@ -27,6 +27,9 @@ export function loadConfig(env) {
     defaultSpecialty: env.DEFAULT_SPECIALTY || "primary-care",
     defaultCountry: env.DEFAULT_COUNTRY || "",
     enableWebUi: String(env.ENABLE_WEB_UI || "true").toLowerCase() !== "false",
+    enableSettingsUi: env.ENABLE_SETTINGS_UI == null
+      ? (env.APP_ENV || env.NODE_ENV || "development") !== "production"
+      : String(env.ENABLE_SETTINGS_UI).toLowerCase() !== "false",
     privacy: {
       phiRedactionMode: env.PHI_REDACTION_MODE || "basic",
       redactBeforeApiCalls: String(env.REDACT_BEFORE_API_CALLS || "true").toLowerCase() !== "false",

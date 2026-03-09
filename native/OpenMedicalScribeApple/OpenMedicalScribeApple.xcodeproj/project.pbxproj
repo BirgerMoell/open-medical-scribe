@@ -313,8 +313,8 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				EIR_PRIVACY_POLICY_URL = "https://birgermoell.github.io/open-medical-scribe/privacy-policy.html";
-				EIR_SUPPORT_URL = "https://birgermoell.github.io/open-medical-scribe/support.html";
+				EIR_PRIVACY_POLICY_URL = "https://scribe.eir.space/privacy-policy.html";
+				EIR_SUPPORT_URL = "https://scribe.eir.space/support.html";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -334,7 +334,8 @@
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				OMS_DEFAULT_BACKEND_URL = "http://192.168.86.116:8799";
+				OMS_DEFAULT_BACKEND_API_TOKEN = WLBzfzO8X8afGkNyBoDwUiYZfS0jQseVX4wtIkALvdSaEESBQRuKI0G/kbrDDr8N;
+				OMS_DEFAULT_BACKEND_URL = "https://scribe.eir.space";
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "Eir Scribe";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -439,8 +440,8 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				EIR_PRIVACY_POLICY_URL = "https://birgermoell.github.io/open-medical-scribe/privacy-policy.html";
-				EIR_SUPPORT_URL = "https://birgermoell.github.io/open-medical-scribe/support.html";
+				EIR_PRIVACY_POLICY_URL = "https://scribe.eir.space/privacy-policy.html";
+				EIR_SUPPORT_URL = "https://scribe.eir.space/support.html";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -454,7 +455,8 @@
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OMS_DEFAULT_BACKEND_URL = "https://api.eirscribe.se";
+				OMS_DEFAULT_BACKEND_API_TOKEN = "";
+				OMS_DEFAULT_BACKEND_URL = "https://scribe.eir.space";
 				PRODUCT_NAME = "Eir Scribe";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";

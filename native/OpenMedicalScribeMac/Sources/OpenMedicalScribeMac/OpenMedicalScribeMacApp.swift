@@ -75,7 +75,7 @@ private struct ScribeRootView: View {
     @AppStorage("openmedicalscribe.acceptedLocalModelDownloadNotice") private var acceptedLocalModelDownloadNotice = false
     @AppStorage("openmedicalscribe.useDirectBergetKey") private var useDirectBergetKey = false
     @State private var directBergetAPIKey = KeychainSecretStore.load(account: KeychainSecretStore.bergetAPIKeyAccount)
-    @State private var backendAPIToken = KeychainSecretStore.load(account: KeychainSecretStore.backendAPITokenAccount)
+    @State private var backendAPIToken = PlatformDefaults.initialBackendAPITokenString
 #endif
 
     var body: some View {
@@ -496,7 +496,7 @@ private struct ScribeRootView: View {
                         Text("Use Cloud")
                             .font(.system(size: 17, weight: .semibold, design: .default))
                             .foregroundStyle(AppTheme.paper)
-                        Text("Upload the recording to your backend or directly to Berget.")
+                        Text("Default route: Eir servers in Sweden with zero Eir retention. Berget AI runs transcription and drafting.")
                             .font(.system(size: 13, weight: .regular, design: .default))
                             .foregroundStyle(AppTheme.paper.opacity(0.82))
                     }
@@ -562,7 +562,7 @@ private struct ScribeRootView: View {
                     )
                     phoneNoticeBlock(
                         title: "Cloud mode uploads audio",
-                        body: "When you choose cloud processing, the recording and transcript are sent to your configured backend or directly to Berget if you enable your own API key."
+                        body: "The default cloud route sends the recording to Eir-managed servers in Sweden. Those servers are configured for zero Eir-side retention, and Berget AI runs transcription and note inference."
                     )
                     phoneNoticeBlock(
                         title: "Local mode downloads models",
@@ -699,7 +699,7 @@ private struct ScribeRootView: View {
 
                     phoneNoticeBlock(
                         title: "What the app processes",
-                        body: "The app can process encounter audio, generated transcripts, note drafts, note edits, and app settings. Local mode keeps the workflow on-device after model download. Cloud mode sends the recording and generated text to your configured backend or directly to Berget if you opt in to your own API key."
+                        body: "The app can process encounter audio, generated transcripts, note drafts, note edits, and app settings. Local mode keeps the workflow on-device after model download. The default cloud route uses Eir-managed servers in Sweden with zero Eir retention, and Berget AI performs transcription and note inference."
                     )
                     phoneNoticeBlock(
                         title: "Where data is stored",
@@ -893,6 +893,10 @@ private struct ScribeRootView: View {
                         .keyboardType(.URL)
                         .textContentType(.URL)
 
+                    Text("Default cloud processing uses Eir servers in Sweden with zero Eir-side data retention. Berget AI handles transcription and note inference. The Eir backend also requires a Backend API Token.")
+                        .font(.system(size: 12, weight: .regular, design: .default))
+                        .foregroundStyle(.secondary)
+
                     SecureField("Backend API Token (optional)", text: $backendAPIToken)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -920,7 +924,7 @@ private struct ScribeRootView: View {
                             .font(.system(size: 12, weight: .regular, design: .default))
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Cloud processing uses your configured backend URL unless you opt in to a direct Berget key.")
+                        Text("Cloud processing uses your configured Eir backend unless you opt in to a direct Berget key.")
                             .font(.system(size: 12, weight: .regular, design: .default))
                             .foregroundStyle(.secondary)
                     }

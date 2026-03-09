@@ -33,6 +33,8 @@
 	<string>Connect to your local Eir Scribe backend on your trusted network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record the clinical conversation so the app can transcribe it and draft a note.</string>
+	<key>OMSDefaultBackendAPIToken</key>
+	<string>$(OMS_DEFAULT_BACKEND_API_TOKEN)</string>
 	<key>OMSDefaultBackendURL</key>
 	<string>$(OMS_DEFAULT_BACKEND_URL)</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

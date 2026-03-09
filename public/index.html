@@ -3,47 +3,259 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Open Medical Scribe</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>Eir Scribe</title>
+    <meta
+      name="description"
+      content="Eir Scribe is the Sweden-hosted, open source medical scribe built for iPhone-native capture, clinician review, and journal-ready documentation."
+    />
+    <meta name="theme-color" content="#FAFAF7" />
+    <link rel="icon" type="image/png" href="/brand/eir-icon-teal.png" />
+    <link rel="stylesheet" href="/site.css" />
   </head>
   <body>
-    <a href="/settings" class="gear" aria-label="Settings">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </a>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand-lockup" href="/" aria-label="Eir Scribe home">
+          <img src="/brand/eir-icon-teal.png" alt="" width="40" height="40" />
+          <div>
+            <span class="brand-eyebrow">Eir Scribe</span>
+            <span class="brand-subline">Open source medical scribe</span>
+          </div>
+        </a>
 
-    <main>
-      <p class="brand">Open Medical Scribe</p>
+        <nav class="topnav" aria-label="Primary">
+          <a href="#workflow">Workflow</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#deployment">Deployment</a>
+          <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a>
+        </nav>
+      </header>
 
-      <div class="recorder">
-        <button type="button" id="record-btn" class="rec" aria-label="Start recording">
-          <span class="rec-icon"></span>
-        </button>
-        <div class="rec-status">
-          <span id="rec-dot" class="dot"></span>
-          <span id="rec-label">Tap to record</span>
+      <main>
+        <section class="hero" data-reveal>
+          <div class="hero-copy">
+            <p class="kicker">Sweden-first. Review-first. Built to ship.</p>
+            <h1>Clinical documentation that feels modern, not fragile.</h1>
+            <p class="hero-lead">
+              Eir Scribe turns real clinical conversation into journal-ready drafts with native iPhone capture,
+              local on-device models, and a Sweden-hosted cloud path that stays operationally clean.
+            </p>
+
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://github.com/BirgerMoell/open-medical-scribe">
+                Explore the source
+              </a>
+              <a class="button button-secondary" href="#deployment">
+                See deployment options
+              </a>
+            </div>
+
+            <dl class="trust-strip" aria-label="Key properties">
+              <div>
+                <dt>Cloud region</dt>
+                <dd>Stockholm</dd>
+              </div>
+              <div>
+                <dt>Inference</dt>
+                <dd>Berget AI</dd>
+              </div>
+              <div>
+                <dt>Retention</dt>
+                <dd>Zero Eir retention</dd>
+              </div>
+              <div>
+                <dt>Input</dt>
+                <dd>Swedish first, multilingual</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="hero-stage">
+            <div class="aura"></div>
+
+            <article class="mock-note-card">
+              <div class="mock-note-topline">
+                <span class="status-pill">Journal draft</span>
+                <span class="status-pill muted">Clinician review required</span>
+              </div>
+
+              <div class="mock-grid">
+                <div class="capture-card">
+                  <div class="capture-mark">
+                    <img src="/brand/eir-icon-teal.png" alt="" width="34" height="34" />
+                  </div>
+                  <p class="capture-label">Encounter captured</p>
+                  <p class="capture-meta">iPhone native recording · local or cloud route</p>
+                </div>
+
+                <div class="note-preview">
+                  <div class="note-preview-head">
+                    <span>Svensk journalstruktur</span>
+                    <span>Draft ready</span>
+                  </div>
+                  <p><strong>Kontaktorsak</strong><br />Tre dagars halsont, feberkansla och trotthet.</p>
+                  <p><strong>Status</strong><br />Rodnade tonsiller utan belaegging. Ingen andningspaaverkan.</p>
+                  <p><strong>Bedomning</strong><br />Ovreforenlig luftvaegsinfektion utan alarmsymtom.</p>
+                  <p><strong>Plan</strong><br />Egenvardsrad, vaetska, ater vid foersaemring eller kvarstaende feber.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="narrative-band" data-reveal>
+          <p>
+            Open source at the core. Native on the device. Sweden-hosted when you need managed cloud. Eir Scribe
+            is designed for clinics that want speed, auditability, and a deployment story they can actually defend.
+          </p>
+        </section>
+
+        <section id="workflow" class="content-section" data-reveal>
+          <div class="section-heading">
+            <p class="section-kicker">Workflow</p>
+            <h2>One encounter in. A usable clinical draft out.</h2>
+            <p>
+              The product is intentionally narrow: capture the conversation, shape the draft, preserve clinician control,
+              and make export into existing journal workflows straightforward.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card">
+              <span class="feature-index">01</span>
+              <h3>Record once</h3>
+              <p>
+                Start with a single, native recorder surface on iPhone. No cluttered workspace, no setup wall before the visit,
+                no need to choose between cloud and local until the recording is done.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <span class="feature-index">02</span>
+              <h3>Draft in the right lane</h3>
+              <p>
+                Stay on-device with WhisperKit and MLX Qwen, or use the managed cloud path on Eir servers in Sweden with
+                Berget AI for transcription and note inference.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <span class="feature-index">03</span>
+              <h3>Review before sign-off</h3>
+              <p>
+                Edit the note by hand, inspect previous versions, reopen earlier encounters, and export journal-ready text or
+                FHIR-compatible payloads without pretending the draft is final.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="privacy" class="content-section split-section" data-reveal>
+          <div class="section-heading compact">
+            <p class="section-kicker">Privacy architecture</p>
+            <h2>Built for healthcare constraints, not demo theater.</h2>
+          </div>
+
+          <div class="split-grid">
+            <article class="architecture-card emphasis">
+              <h3>Cloud mode</h3>
+              <p>
+                Audio is routed through Eir-managed infrastructure hosted in Sweden. Eir is configured for zero Eir-side data
+                retention, while Berget AI performs the inference work for transcription and note generation.
+              </p>
+              <ul>
+                <li>Fly deployment in Stockholm</li>
+                <li>Bearer-token gated API surface</li>
+                <li>Clear separation between Eir control plane and inference provider</li>
+              </ul>
+            </article>
+
+            <article class="architecture-card">
+              <h3>Local mode</h3>
+              <p>
+                The same app can download models onto the iPhone and run transcription plus drafting locally. That gives teams a
+                credible offline path without forking the product into a separate build.
+              </p>
+              <ul>
+                <li>WhisperKit for transcription</li>
+                <li>MLX Qwen for local drafting</li>
+                <li>Thoughtful progress states for model preparation</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="content-section" data-reveal>
+          <div class="section-heading">
+            <p class="section-kicker">Outputs</p>
+            <h2>Swedish-first, but not Swedish-only.</h2>
+            <p>
+              The current product is optimized around Swedish documentation patterns, accent-insensitive transcript search,
+              and journal-style note structures. The language pipeline remains multilingual by design.
+            </p>
+          </div>
+
+          <div class="output-grid">
+            <article class="output-card">
+              <h3>Journal-ready text</h3>
+              <p>Fast paste into systems like Cosmic, TakeCare, Melior, or whatever the clinic already runs.</p>
+            </article>
+            <article class="output-card">
+              <h3>FHIR export</h3>
+              <p>Structured DocumentReference export for teams building deeper integrations over time.</p>
+            </article>
+            <article class="output-card">
+              <h3>History and versions</h3>
+              <p>Saved encounters, editable drafts, revision timelines, and visible recovery when a note changes.</p>
+            </article>
+            <article class="output-card">
+              <h3>Open deployment model</h3>
+              <p>Run it yourself, bring your own keys, or use an Eir-managed Sweden-hosted deployment path.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="deployment" class="content-section cta-section" data-reveal>
+          <div class="cta-copy">
+            <p class="section-kicker">Deployment</p>
+            <h2>Open source, but ready to be bought for real use.</h2>
+            <p>
+              Some teams want to self-host. Some want a clinic-ready hosted path with Sweden-first infrastructure, controlled spend,
+              and a cleaner support model. Eir Scribe is designed to support both without splitting the product in two.
+            </p>
+          </div>
+
+          <div class="cta-actions">
+            <a class="button button-primary" href="https://github.com/BirgerMoell/open-medical-scribe">
+              Read the repository
+            </a>
+            <a class="button button-secondary" href="/privacy-policy.html">
+              Review privacy model
+            </a>
+            <a class="button button-secondary" href="/support.html">
+              Deployment support
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-brand">
+          <img src="/brand/logo-colored.png" alt="eirSPACE" width="184" height="74" />
+          <p>
+            Eir Scribe is the open medical scribe project for native clinical capture, Sweden-hosted cloud workflows,
+            and clinician-reviewed documentation.
+          </p>
         </div>
-      </div>
 
-      <section id="transcript-section" class="section" hidden>
-        <p class="label">Transcript</p>
-        <div id="transcript" class="transcript"></div>
-        <p id="tx-model" class="model-info"></p>
-      </section>
-
-      <section id="note-section" class="section" hidden>
-        <div class="note-head">
-          <p class="label">Draft Note</p>
-          <button type="button" id="copy-btn" class="copy">Copy</button>
+        <div class="footer-links">
+          <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub</a>
+          <a href="/privacy-policy.html">Privacy policy</a>
+          <a href="/support.html">Support</a>
         </div>
-        <p id="note-status" class="note-status"></p>
-        <pre id="note" class="note"></pre>
-        <p id="note-model" class="model-info"></p>
-      </section>
-    </main>
+      </footer>
+    </div>
 
-    <script type="module" src="/app.js"></script>
+    <script src="/site.js" defer></script>
   </body>
 </html>

@@ -9,13 +9,15 @@ settings:
     CURRENT_PROJECT_VERSION: 1
   configs:
     Debug:
-      OMS_DEFAULT_BACKEND_URL: http://192.168.86.116:8799
-      EIR_SUPPORT_URL: https://birgermoell.github.io/open-medical-scribe/support.html
-      EIR_PRIVACY_POLICY_URL: https://birgermoell.github.io/open-medical-scribe/privacy-policy.html
+      OMS_DEFAULT_BACKEND_URL: https://scribe.eir.space
+      OMS_DEFAULT_BACKEND_API_TOKEN: WLBzfzO8X8afGkNyBoDwUiYZfS0jQseVX4wtIkALvdSaEESBQRuKI0G/kbrDDr8N
+      EIR_SUPPORT_URL: https://scribe.eir.space/support.html
+      EIR_PRIVACY_POLICY_URL: https://scribe.eir.space/privacy-policy.html
     Release:
       OMS_DEFAULT_BACKEND_URL: https://scribe.eir.space
-      EIR_SUPPORT_URL: https://birgermoell.github.io/open-medical-scribe/support.html
-      EIR_PRIVACY_POLICY_URL: https://birgermoell.github.io/open-medical-scribe/privacy-policy.html
+      OMS_DEFAULT_BACKEND_API_TOKEN: ""
+      EIR_SUPPORT_URL: https://scribe.eir.space/support.html
+      EIR_PRIVACY_POLICY_URL: https://scribe.eir.space/privacy-policy.html
 packages:
   WhisperKit:
     url: https://github.com/argmaxinc/WhisperKit.git
@@ -71,6 +73,7 @@ targets:
         UIApplicationSupportsIndirectInputEvents: YES
         UILaunchScreen: {}
         OMSDefaultBackendURL: $(OMS_DEFAULT_BACKEND_URL)
+        OMSDefaultBackendAPIToken: $(OMS_DEFAULT_BACKEND_API_TOKEN)
         EIRSupportURL: $(EIR_SUPPORT_URL)
         EIRPrivacyPolicyURL: $(EIR_PRIVACY_POLICY_URL)
         NSLocalNetworkUsageDescription: Connect to your local Eir Scribe backend on your trusted network.

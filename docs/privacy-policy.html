@@ -4,113 +4,223 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Eir Scribe Privacy Policy</title>
+  <meta name="theme-color" content="#FAFAF7">
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6efe6;
-      --paper: #fffaf3;
-      --ink: #49372f;
-      --muted: #77645a;
-      --accent: #b96e52;
-      --stroke: #dccab6;
+      --eir-500: #1e94a8;
+      --eir-700: #1a6474;
+      --gold-500: #d4a76a;
+      --sand-50: #fafaf7;
+      --sand-100: #f5f4f0;
+      --sand-200: #e8e6e1;
+      --sand-500: #7a766f;
+      --sand-700: #3d3a36;
+      --sand-900: #1a1917;
+      --shadow: 0 24px 60px rgba(17, 17, 16, 0.08);
     }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(180deg, var(--bg), #eadfcf);
-      color: var(--ink);
+      font-family: "Geist Sans", system-ui, -apple-system, sans-serif;
+      color: var(--sand-700);
+      background:
+        radial-gradient(circle at top left, rgba(212, 167, 106, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(30, 148, 168, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(245, 244, 240, 0.98), rgba(250, 250, 247, 0.98));
     }
-    main {
-      max-width: 780px;
+    .shell {
+      width: min(calc(100% - 32px), 980px);
       margin: 0 auto;
-      padding: 48px 20px 64px;
+      padding: 24px 0 72px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+      display: block;
+    }
+    .brand-title {
+      display: block;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--sand-900);
+    }
+    .brand-subtitle {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--sand-500);
+    }
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(232, 230, 225, 0.92);
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--sand-700);
+      text-decoration: none;
+      font-weight: 600;
     }
     article {
-      background: var(--paper);
-      border: 1px solid var(--stroke);
-      border-radius: 28px;
-      padding: 32px;
-      box-shadow: 0 24px 60px rgba(73, 55, 47, 0.08);
-    }
-    h1, h2 {
-      margin: 0 0 12px;
-    }
-    h1 {
-      font-size: 2rem;
-    }
-    h2 {
-      margin-top: 28px;
-      font-size: 1.05rem;
-    }
-    p, li {
-      line-height: 1.6;
-      color: var(--muted);
-    }
-    ul {
-      padding-left: 20px;
+      padding: 36px;
+      border-radius: 32px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(232, 230, 225, 0.94);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
     }
     .badge {
-      display: inline-block;
-      margin-bottom: 16px;
-      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
       border-radius: 999px;
-      background: rgba(185, 110, 82, 0.12);
-      color: var(--accent);
-      font-weight: 600;
+      background: rgba(30, 148, 168, 0.1);
+      color: var(--eir-700);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    h1, h2 { color: var(--sand-900); }
+    h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+    .lede {
+      max-width: 62ch;
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.65;
+    }
+    .meta {
+      margin-top: 14px;
+      color: var(--sand-500);
+      font-size: 0.94rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(250, 250, 247, 0.96), rgba(245, 244, 240, 0.92));
+      border: 1px solid rgba(232, 230, 225, 0.94);
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+    p, li {
+      margin: 0;
+      color: var(--sand-700);
+      line-height: 1.65;
+    }
+    ul {
+      margin: 12px 0 0;
+      padding-left: 20px;
+    }
+    li + li { margin-top: 8px; }
+    .footnote {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(232, 230, 225, 0.94);
     }
     .links {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-top: 28px;
+      margin-top: 18px;
     }
     .links a {
-      color: var(--accent);
-      font-weight: 600;
+      color: var(--eir-700);
       text-decoration: none;
+      font-weight: 700;
     }
-    .links a:hover {
-      text-decoration: underline;
+    @media (max-width: 760px) {
+      article { padding: 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <main>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Eir Scribe home">
+        <img src="/brand/eir-icon-teal.png" alt="">
+        <span>
+          <span class="brand-title">Eir Scribe</span>
+          <span class="brand-subtitle">Privacy and data handling</span>
+        </span>
+      </a>
+      <a class="home-link" href="/">Back to Eir Scribe</a>
+    </header>
+
     <article>
-      <div class="badge">Eir Scribe</div>
-      <h1>Privacy Policy</h1>
-      <p>Eir Scribe is a clinician-assistive documentation app. It can process encounter audio, transcripts, note drafts, note edits, and export artifacts. It is not an autonomous diagnostic or treatment system.</p>
-      <p><strong>Last updated:</strong> March 6, 2026</p>
+      <div class="badge">Privacy policy</div>
+      <h1>Designed for clinical review, with a cloud path that stays operationally narrow.</h1>
+      <p class="lede">Eir Scribe helps clinicians capture encounter audio, generate transcripts, draft notes, review edits, and export journal-ready output. It is assistive software, not an autonomous clinical system.</p>
+      <p class="meta"><strong>Last updated:</strong> March 9, 2026</p>
 
-      <h2>Data the app may process</h2>
-      <ul>
-        <li>Audio recordings of clinical conversations.</li>
-        <li>Generated transcripts and draft notes.</li>
-        <li>Manual note edits, saved-note history, and export files.</li>
-        <li>Configuration data such as backend URL, local model choice, and optional tokens or API keys.</li>
-      </ul>
+      <section class="grid">
+        <div class="card">
+          <h2>What the app may process</h2>
+          <ul>
+            <li>Audio recordings of clinical conversations.</li>
+            <li>Generated transcripts and draft notes.</li>
+            <li>Manual note edits, saved-note history, and export files.</li>
+            <li>Configuration data such as backend URL, local model choice, and optional tokens or API keys.</li>
+          </ul>
+        </div>
 
-      <h2>Local and cloud processing</h2>
-      <p>When a user chooses local processing, model files are downloaded to the device and the transcription or note drafting flow can run locally. When a user chooses cloud processing, the recording and generated text are sent to the configured backend or, if the user opts in, directly to Berget.</p>
-      <p>If a user enters their own Berget API key, the app is designed to send cloud requests directly to Berget instead of proxying them through an Eir Scribe-managed service.</p>
+        <div class="card">
+          <h2>Where processing happens</h2>
+          <p>Local mode downloads models onto the device and runs transcription or drafting on-device. The default cloud route sends the recording and generated text to Eir-managed servers in Sweden. Those servers are configured for zero Eir-side data retention, and Berget AI performs transcription and note inference.</p>
+        </div>
 
-      <h2>Storage</h2>
-      <p>Saved notes and local settings are stored on the device. API keys and backend bearer tokens are stored in the Apple Keychain. Exported text or FHIR files are stored wherever the user explicitly shares or saves them.</p>
+        <div class="card">
+          <h2>Storage</h2>
+          <p>Saved notes and local settings are stored on the device. API keys and backend bearer tokens are stored in the Apple Keychain. Exported text or FHIR files are stored wherever the user explicitly saves or shares them.</p>
+        </div>
 
-      <h2>Retention and governance</h2>
-      <p>If Eir Scribe is deployed by a healthcare organization, that organization is responsible for lawful basis, retention periods, access control, journal import workflows, and deletion handling for patient data.</p>
+        <div class="card">
+          <h2>Governance</h2>
+          <p>If Eir Scribe is deployed by a healthcare organization, that organization is responsible for lawful basis, retention periods, access control, journal import workflows, and deletion handling for patient data.</p>
+        </div>
+      </section>
 
-      <h2>Clinical responsibility</h2>
-      <p>All generated drafts require clinician review, editing, and sign-off before use in patient care or before import into a healthcare record.</p>
+      <section class="footnote">
+        <h2>Clinical responsibility</h2>
+        <p>All generated drafts require clinician review, editing, and sign-off before use in patient care or before import into a healthcare record.</p>
 
-      <h2>Contact and support</h2>
-      <p>For open-source support, bug reports, or privacy questions about this repository, use the GitHub project links below. If Eir Scribe is deployed by a healthcare organization, that organization should provide its own patient-facing and clinician-facing privacy contacts.</p>
-
-      <div class="links">
-        <a href="./support.html">Support</a>
-        <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub repository</a>
-        <a href="https://github.com/BirgerMoell/open-medical-scribe/issues">Report an issue</a>
-      </div>
+        <div class="links">
+          <a href="/support.html">Support</a>
+          <a href="https://github.com/BirgerMoell/open-medical-scribe">GitHub repository</a>
+          <a href="https://github.com/BirgerMoell/open-medical-scribe/issues">Report an issue</a>
+        </div>
+      </section>
     </article>
   </main>
 </body>

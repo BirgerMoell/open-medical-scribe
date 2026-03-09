@@ -4,84 +4,200 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Eir Scribe Support</title>
+  <meta name="theme-color" content="#FAFAF7">
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6efe6;
-      --paper: #fffaf3;
-      --ink: #49372f;
-      --muted: #77645a;
-      --accent: #b96e52;
-      --stroke: #dccab6;
+      --eir-500: #1e94a8;
+      --eir-700: #1a6474;
+      --gold-500: #d4a76a;
+      --sand-50: #fafaf7;
+      --sand-100: #f5f4f0;
+      --sand-200: #e8e6e1;
+      --sand-500: #7a766f;
+      --sand-700: #3d3a36;
+      --sand-900: #1a1917;
+      --shadow: 0 24px 60px rgba(17, 17, 16, 0.08);
     }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(180deg, var(--bg), #eadfcf);
-      color: var(--ink);
+      font-family: "Geist Sans", system-ui, -apple-system, sans-serif;
+      color: var(--sand-700);
+      background:
+        radial-gradient(circle at top left, rgba(212, 167, 106, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(30, 148, 168, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(245, 244, 240, 0.98), rgba(250, 250, 247, 0.98));
     }
-    main {
-      max-width: 760px;
+    .shell {
+      width: min(calc(100% - 32px), 980px);
       margin: 0 auto;
-      padding: 48px 20px 64px;
+      padding: 24px 0 72px;
     }
-    section {
-      background: var(--paper);
-      border: 1px solid var(--stroke);
-      border-radius: 28px;
-      padding: 32px;
-      box-shadow: 0 24px 60px rgba(73, 55, 47, 0.08);
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
     }
-    h1 {
-      margin-top: 0;
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
     }
-    p, li {
-      color: var(--muted);
-      line-height: 1.6;
+    .brand img {
+      width: 36px;
+      height: 36px;
+      display: block;
+    }
+    .brand-title {
+      display: block;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--sand-900);
+    }
+    .brand-subtitle {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--sand-500);
+    }
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(232, 230, 225, 0.92);
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--sand-700);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    article {
+      padding: 36px;
+      border-radius: 32px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(232, 230, 225, 0.94);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
     }
     .badge {
-      display: inline-block;
-      margin-bottom: 16px;
-      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
       border-radius: 999px;
-      background: rgba(185, 110, 82, 0.12);
-      color: var(--accent);
-      font-weight: 600;
+      background: rgba(212, 167, 106, 0.16);
+      color: #8e6432;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    h1, h2 { color: var(--sand-900); }
+    h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+    .lede {
+      max-width: 60ch;
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.65;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(250, 250, 247, 0.96), rgba(245, 244, 240, 0.92));
+      border: 1px solid rgba(232, 230, 225, 0.94);
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+    p, li {
+      margin: 0;
+      color: var(--sand-700);
+      line-height: 1.65;
     }
     .links {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-top: 28px;
+      margin-top: 26px;
     }
     .links a {
-      color: var(--accent);
-      font-weight: 600;
+      color: var(--eir-700);
       text-decoration: none;
+      font-weight: 700;
     }
-    .links a:hover {
-      text-decoration: underline;
+    .links a.primary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--eir-500), var(--eir-700));
+      color: white;
+    }
+    @media (max-width: 860px) {
+      article { padding: 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <main>
-    <section>
-      <div class="badge">Eir Scribe</div>
-      <h1>Eir Scribe Support</h1>
-      <p>For the open-source build of Eir Scribe, support requests and bug reports should go through the project repository.</p>
-      <ul>
-        <li>General bugs and usability issues: open a GitHub issue.</li>
-        <li>Privacy or deployment questions: review the privacy policy, then open an issue with the relevant context.</li>
-        <li>Clinical deployment support: contact the healthcare organization or operator that configured your backend, retention policy, and journal import workflow.</li>
-      </ul>
-      <p>If this app is distributed by a healthcare provider or company, that operator should replace or extend this page with their own support contacts, response expectations, and incident process.</p>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Eir Scribe home">
+        <img src="/brand/eir-icon-teal.png" alt="">
+        <span>
+          <span class="brand-title">Eir Scribe</span>
+          <span class="brand-subtitle">Support and deployment help</span>
+        </span>
+      </a>
+      <a class="home-link" href="/">Back to Eir Scribe</a>
+    </header>
+
+    <article>
+      <div class="badge">Support</div>
+      <h1>Open source at the core, with a hosted path clinics can actually run.</h1>
+      <p class="lede">For the open-source build, support starts in the repository. For production or clinical deployments, the operator of the backend should own response times, incident handling, retention policy, and journal import workflows.</p>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Product issues</h2>
+          <p>Bug reports, UX issues, and reproducible failures in the open-source codebase should go through the project repository.</p>
+        </div>
+        <div class="card">
+          <h2>Privacy questions</h2>
+          <p>Review the privacy policy first, then open an issue with the deployment context, processing mode, and backend setup that matters.</p>
+        </div>
+        <div class="card">
+          <h2>Clinical deployment</h2>
+          <p>If Eir Scribe is distributed by a healthcare organization or company, that operator should publish its own support contacts, deletion handling, and incident process.</p>
+        </div>
+      </section>
+
       <div class="links">
-        <a href="https://github.com/BirgerMoell/open-medical-scribe/issues">Open a support issue</a>
+        <a class="primary" href="https://github.com/BirgerMoell/open-medical-scribe/issues">Open a support issue</a>
         <a href="https://github.com/BirgerMoell/open-medical-scribe">Repository</a>
-        <a href="./privacy-policy.html">Privacy policy</a>
+        <a href="/privacy-policy.html">Privacy policy</a>
       </div>
-    </section>
+    </article>
   </main>
 </body>
 </html>

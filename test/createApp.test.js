@@ -22,6 +22,7 @@ function baseConfig(overrides = {}) {
     defaultNoteStyle: "soap",
     defaultSpecialty: "primary-care",
     enableWebUi: false,
+    enableSettingsUi: false,
     privacy: {
       phiRedactionMode: "basic",
       redactBeforeApiCalls: true,
@@ -118,6 +119,22 @@ test("GET /health returns service status", async () => {
   assert.equal(res.json.ok, true);
   assert.equal(res.json.service, "open-medical-scribe");
   assert.equal(res.json.env, "test");
+});
+
+test("GET / serves the public landing page when web UI is enabled", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true }) });
+  const res = await invoke(app, { method: "GET", url: "/" });
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.text, /Eir Scribe/);
+  assert.match(res.text, /Sweden-hosted cloud path/i);
+});
+
+test("GET /settings is hidden when settings UI is disabled", async () => {
+  const app = createApp({ config: baseConfig({ enableWebUi: true, enableSettingsUi: false }) });
+  const res = await invoke(app, { method: "GET", url: "/settings" });
+
+  assert.equal(res.statusCode, 404);
 });
 
 test("POST /v1/settings can be disabled in production", async () => {
