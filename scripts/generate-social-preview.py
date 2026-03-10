@@ -60,7 +60,7 @@ def main() -> None:
     )
     draw.multiline_text(
         (88, 320),
-        "Open source medical scribe with a Sweden-hosted cloud app,\nclinician review, and a real path to local models.",
+        "Open source medical scribe with a Sweden-hosted cloud app,\nclinician review, and editable documentation drafts.",
         font=load_font(FONT_REGULAR, 30),
         fill="#5A5650",
         spacing=12,
@@ -103,10 +103,10 @@ def main() -> None:
         fill="#3D3A36",
         spacing=8,
     )
-    panel_draw.text((28, 208), "Bedömning", font=load_font(FONT_BOLD, 20), fill="#1A1917")
+    panel_draw.text((28, 208), "För journalisering", font=load_font(FONT_BOLD, 20), fill="#1A1917")
     panel_draw.multiline_text(
         (28, 238),
-        "Bild förenlig med övre\nluftvägsinfektion.\nInga alarmsymtom.",
+        "Utkastet sammanfattar\nsamtalet och behöver\nverifieras av kliniker.",
         font=load_font(FONT_REGULAR, 22),
         fill="#3D3A36",
         spacing=8,
