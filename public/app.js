@@ -6,6 +6,7 @@ const recordingPill = document.getElementById("recording-pill");
 const timerPill = document.getElementById("timer-pill");
 const transcriptOutput = document.getElementById("transcript-output");
 const noteOutput = document.getElementById("note-output");
+const noteEditedIndicator = document.getElementById("note-edited-indicator");
 const warningOutput = document.getElementById("warning-output");
 const providerPill = document.getElementById("provider-pill");
 const quotaCard = document.getElementById("quota-card");
@@ -67,6 +68,7 @@ let isRecording = false;
 let localWorker = null;
 let workerRequestId = 0;
 const pendingWorkerRequests = new Map();
+let generatedNoteDraft = "";
 
 const localCapability = {
   webgpu: typeof navigator !== "undefined" && !!navigator.gpu,
@@ -153,8 +155,8 @@ recordButton.addEventListener("click", () => {
 });
 
 copyButton.addEventListener("click", async () => {
-  const text = noteOutput.textContent.trim();
-  if (!text || text === "Your draft note will appear here.") {
+  const text = getCurrentNoteText();
+  if (!text) {
     return;
   }
 
@@ -163,6 +165,11 @@ copyButton.addEventListener("click", async () => {
   window.setTimeout(() => {
     copyButton.textContent = "Copy";
   }, 1500);
+});
+
+noteOutput.addEventListener("input", () => {
+  syncEditedState();
+  autosizeNoteEditor();
 });
 
 modeCloudButton.addEventListener("click", () => setExecutionMode("cloud"));
@@ -640,9 +647,12 @@ async function requestScribe(clientToken) {
 
 function renderResult(result) {
   transcriptOutput.textContent = result.transcript || "No transcript returned.";
-  noteOutput.textContent = result.noteDraft || "No note draft returned.";
-  copyButton.disabled = !result.noteDraft;
+  generatedNoteDraft = result.noteDraft || "";
+  noteOutput.value = generatedNoteDraft;
+  copyButton.disabled = !generatedNoteDraft;
   copyButton.textContent = "Copy";
+  syncEditedState();
+  autosizeNoteEditor();
 
   const txProvider = result.providers?.transcription || "cloud";
   const noteProvider = result.providers?.note || "cloud";
@@ -660,6 +670,24 @@ function renderResult(result) {
 function updateStatus(title, detail) {
   statusLabel.textContent = title;
   statusDetail.textContent = detail;
+}
+
+function getCurrentNoteText() {
+  return noteOutput.value.trim();
+}
+
+function syncEditedState() {
+  const current = getCurrentNoteText();
+  const original = generatedNoteDraft.trim();
+  const isEdited = Boolean(current) && current !== original;
+  noteEditedIndicator.hidden = !isEdited;
+  copyButton.disabled = !current;
+}
+
+function autosizeNoteEditor() {
+  noteOutput.style.height = "auto";
+  const nextHeight = Math.max(220, noteOutput.scrollHeight);
+  noteOutput.style.height = `${nextHeight}px`;
 }
 
 function hydrateQuota() {

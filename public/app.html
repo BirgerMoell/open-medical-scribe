@@ -175,15 +175,18 @@
             <div class="app-panel-head">
               <div>
                 <p class="section-kicker">Draft note</p>
-                <h2>Clinician review required</h2>
+                <h2>Clinician review required <span class="app-note-edited" id="note-edited-indicator" hidden>Edited</span></h2>
               </div>
               <button type="button" class="button button-secondary app-copy-button" id="copy-btn" disabled>
                 Copy
               </button>
             </div>
-            <div class="app-panel-body app-note-output" id="note-output">
-              Your draft note will appear here.
-            </div>
+            <textarea
+              class="app-panel-body app-note-output app-note-editor"
+              id="note-output"
+              placeholder="Your draft note will appear here."
+              spellcheck="false"
+            ></textarea>
             <p class="app-warning" id="warning-output" hidden></p>
             <div class="app-quota" id="quota-card" hidden>
               <p class="section-kicker">Trial quota</p>

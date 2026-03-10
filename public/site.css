@@ -964,6 +964,33 @@ li {
   font-size: 0.95rem;
 }
 
+.app-note-editor {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  outline: none;
+  appearance: none;
+}
+
+.app-note-editor:focus {
+  border-color: rgba(30, 148, 168, 0.42);
+  box-shadow: 0 0 0 4px rgba(30, 148, 168, 0.08);
+}
+
+.app-note-edited {
+  display: inline-flex;
+  margin-left: 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(212, 167, 106, 0.16);
+  color: var(--gold-700);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .app-copy-button[disabled] {
   opacity: 0.5;
   cursor: default;
