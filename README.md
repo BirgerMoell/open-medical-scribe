@@ -17,6 +17,8 @@ The project was born out of the need for a medical scribe that can operate under
 
 Open Medical Scribe is designed for clinicians, healthtech developers, researchers, and healthcare organizations who want full control over their clinical AI tooling -- from model selection to data residency. It is an assistive documentation tool, not a diagnostic system. All generated notes require clinician review and sign-off before use.
 
+For the current EU regulatory boundary assessment of the product, see [docs/mdr-boundary-assessment.md](/Users/birger/Community/open-medical-scribe/docs/mdr-boundary-assessment.md).
+
 ## Key Features
 
 - **Fully local operation** -- Run transcription (Whisper ONNX / whisper.cpp / faster-whisper) and note generation (Ollama) entirely on your own hardware. No data leaves your machine.
