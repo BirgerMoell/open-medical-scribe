@@ -4,6 +4,8 @@ Last reviewed: 2026-03-10
 
 This document is a product and engineering assessment of how the current Eir Scribe feature set relates to the EU Medical Device Regulation (MDR). It is not legal advice. If you plan to commercialize the product in clinical settings, you should have this reviewed by regulatory counsel and, if needed, a notified body strategy adviser.
 
+If you decide to pursue an ordinary Class I MDR path for a locked reference build, see [mdr-class-i-roadmap/README.md](/Users/birger/Community/open-medical-scribe/docs/mdr-class-i-roadmap/README.md).
+
 ## Executive conclusion
 
 Eir Scribe can plausibly be positioned outside MDR if its intended purpose remains narrow:
