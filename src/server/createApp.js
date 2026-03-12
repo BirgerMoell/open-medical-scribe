@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import { badRequest, jsonResponse, readJsonBody, readRawBody } from "../util/http.js";
 import { createScribeService } from "../services/scribeService.js";
 import { createNoteGenerator } from "../providers/note/index.js";
@@ -9,6 +8,7 @@ import { parseMultipartFormData } from "../util/multipart.js";
 import { applySavedSettings, saveSettings, configToSettingsResponse } from "../services/settingsStore.js";
 import { buildTranscriptDocument, searchTranscriptDocument } from "../services/transcriptArtifacts.js";
 import { createClientAccessService } from "../services/clientAccessService.js";
+import { hasAzureChatFallback, requestAzureChatCompletion } from "../providers/shared/azureOpenAi.js";
 
 export function createApp({ config }) {
   let transcriptionProvider = createTranscriptionProvider(config);
@@ -159,30 +159,26 @@ export function createApp({ config }) {
           }
 
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
-          const upstream = await fetchBergetChatCompletion(config, body);
-
-          if (!upstream.ok) {
-            return relayChatError(res, upstream);
-          }
-
-          if (body?.stream) {
-            const quota = auth.kind === "client"
-              ? clientAccess.recordChatUsage(auth.clientId)
-              : null;
-            return relayStreamingChatResponse(res, upstream, quota);
-          }
-
-          const payload = await decodeUpstreamJson(upstream);
+          const completion = await resolveHostedChatCompletion(config, body);
+          const payload = completion.payload;
           const quota = auth.kind === "client"
             ? clientAccess.recordChatUsage(auth.clientId)
             : null;
 
+          if (body?.stream) {
+            return relaySyntheticStreamingChatResponse(res, payload, quota, completion.provider);
+          }
+
           if (quota && payload && typeof payload === "object" && !Array.isArray(payload)) {
             payload.clientQuota = quota;
           }
+          if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+            payload.provider = completion.provider;
+          }
 
-          res.statusCode = upstream.status;
+          res.statusCode = 200;
           res.setHeader("content-type", "application/json; charset=utf-8");
+          res.setHeader("x-eir-provider", completion.provider);
           res.end(JSON.stringify(payload));
           return;
         }
@@ -419,26 +415,6 @@ function getRequestIp(req) {
   return req.socket?.remoteAddress || "";
 }
 
-async function fetchBergetChatCompletion(config, body) {
-  if (!config?.berget?.apiKey) {
-    const error = new Error("BERGET_API_KEY is not configured for hosted chat.");
-    error.statusCode = 503;
-    throw error;
-  }
-
-  const upstreamBody = normalizeChatCompletionBody(config, body);
-  const upstreamURL = `${String(config.berget.baseUrl || "https://api.berget.ai").replace(/\/+$/, "")}/v1/chat/completions`;
-
-  return fetch(upstreamURL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.berget.apiKey}`,
-    },
-    body: JSON.stringify(upstreamBody),
-  });
-}
-
 function normalizeChatCompletionBody(config, body) {
   const payload = body && typeof body === "object" ? { ...body } : {};
   if (!payload.model) {
@@ -450,19 +426,88 @@ function normalizeChatCompletionBody(config, body) {
   return payload;
 }
 
-async function relayChatError(res, upstream) {
-  const text = await upstream.text();
-  res.statusCode = upstream.status;
-  res.setHeader("content-type", upstream.headers.get("content-type") || "application/json; charset=utf-8");
-  res.end(text);
-}
+async function resolveHostedChatCompletion(config, body) {
+  const normalizedBody = normalizeChatCompletionBody(config, body);
 
-async function decodeUpstreamJson(upstream) {
-  const text = await upstream.text();
-  if (!text) {
-    return {};
+  if (config?.berget?.apiKey) {
+    try {
+      const { json } = await requestBergetChatCompletion(config, normalizedBody);
+      return { provider: "berget", payload: json };
+    } catch (error) {
+      if (!shouldFailoverHostedChat(error) || !hasAzureChatFallback(config)) {
+        throw error;
+      }
+    }
   }
 
+  if (hasAzureChatFallback(config)) {
+    const { json } = await requestAzureChatCompletion(config, normalizedBody, { timeoutMs: 180000 });
+    return { provider: "azure-openai", payload: json };
+  }
+
+  const error = new Error("No hosted chat provider is currently configured.");
+  error.statusCode = 503;
+  throw error;
+}
+
+async function requestBergetChatCompletion(config, body) {
+  if (!config?.berget?.apiKey) {
+    const error = new Error("BERGET_API_KEY is not configured for hosted chat.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 180000);
+  try {
+    const upstreamURL = `${String(config.berget.baseUrl || "https://api.berget.ai").replace(/\/+$/, "")}/v1/chat/completions`;
+    const response = await fetch(upstreamURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.berget.apiKey}`,
+      },
+      body: JSON.stringify({ ...body, stream: false }),
+      signal: controller.signal,
+    });
+
+    const text = await response.text();
+    const json = safeJsonParse(text);
+
+    if (!response.ok || json?.error) {
+      const error = new Error(
+        `Berget AI chat failed (${response.status}): ${json?.error?.message || text || response.statusText}`,
+      );
+      error.statusCode = 502;
+      error.upstreamStatus = response.status;
+      error.upstreamPayload = json;
+      throw error;
+    }
+
+    return { response, text, json };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function shouldFailoverHostedChat(error) {
+  const status = Number(error?.upstreamStatus || error?.statusCode || 0);
+  const code = String(error?.upstreamPayload?.error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    status >= 500
+    || code === "model_overloaded"
+    || code === "internal_error"
+    || code === "server_error"
+    || message.includes("timeout")
+    || message.includes("model_overloaded")
+    || message.includes("internal_error")
+    || message.includes("server_error")
+  );
+}
+
+function safeJsonParse(text) {
+  if (!text) return {};
   try {
     return JSON.parse(text);
   } catch {
@@ -475,42 +520,61 @@ async function decodeUpstreamJson(upstream) {
   }
 }
 
-async function relayStreamingChatResponse(res, upstream, quota) {
-  res.statusCode = upstream.status;
-  copyUpstreamHeader(upstream, res, "content-type", "text/event-stream; charset=utf-8");
-  copyUpstreamHeader(upstream, res, "cache-control", "no-cache");
-  copyUpstreamHeader(upstream, res, "connection", "keep-alive");
+async function relaySyntheticStreamingChatResponse(res, payload, quota, provider) {
+  res.statusCode = 200;
+  res.setHeader("content-type", "text/event-stream; charset=utf-8");
+  res.setHeader("cache-control", "no-cache");
+  res.setHeader("connection", "keep-alive");
+  res.setHeader("x-eir-provider", provider);
 
   if (quota) {
     res.setHeader("x-eir-trial-remaining-requests", String(quota.remaining.requests));
     res.setHeader("x-eir-trial-remaining-usd", String(quota.remaining.estimatedCostUsd));
   }
 
-  const chunks = [];
-  if (!upstream.body) {
-    res.end();
-    return;
+  const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+  const message = choice?.message || {};
+  const delta = {};
+
+  if (typeof message.content === "string" && message.content) {
+    delta.content = message.content;
+  }
+  if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    delta.tool_calls = message.tool_calls.map((call, index) => ({
+      index,
+      id: call.id,
+      type: call.type || "function",
+      function: call.function || {},
+    }));
   }
 
-  for await (const chunk of Readable.fromWeb(upstream.body)) {
-    if (typeof res.write === "function") {
-      res.write(chunk);
-    } else {
-      chunks.push(Buffer.from(chunk));
-    }
+  if (Object.keys(delta).length > 0) {
+    res.write(`data: ${JSON.stringify(buildChatChunkPayload(payload, delta, null))}\n\n`);
   }
-
-  if (chunks.length > 0) {
-    res.end(Buffer.concat(chunks));
-    return;
-  }
-
+  res.write(`data: ${JSON.stringify(buildChatChunkPayload(payload, {}, choice?.finish_reason || inferFinishReason(message)))}\n\n`);
+  res.write("data: [DONE]\n\n");
   res.end();
 }
 
-function copyUpstreamHeader(upstream, res, name, fallback) {
-  const value = upstream.headers.get(name) || fallback;
-  if (value) {
-    res.setHeader(name, value);
+function buildChatChunkPayload(payload, delta, finishReason) {
+  return {
+    id: payload?.id || `chatcmpl_${Date.now()}`,
+    object: "chat.completion.chunk",
+    created: payload?.created || Math.floor(Date.now() / 1000),
+    model: payload?.model || "fallback",
+    choices: [
+      {
+        index: 0,
+        delta,
+        finish_reason: finishReason,
+      },
+    ],
+  };
+}
+
+function inferFinishReason(message) {
+  if (Array.isArray(message?.tool_calls) && message.tool_calls.length > 0) {
+    return "tool_calls";
   }
+  return "stop";
 }

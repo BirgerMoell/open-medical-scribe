@@ -84,6 +84,13 @@ export function loadConfig(env) {
       transcribeModel: env.BERGET_TRANSCRIBE_MODEL || "KBLab/kb-whisper-large",
       noteModel: env.BERGET_NOTE_MODEL || "openai/gpt-oss-120b",
     },
+    azure: {
+      openaiApiKey: env.AZURE_OPENAI_API_KEY || "",
+      openaiEndpoint: env.AZURE_OPENAI_ENDPOINT || "",
+      openaiDeploymentName: env.AZURE_OPENAI_DEPLOYMENT_NAME || "",
+      transcriptionDeploymentName: env.AZURE_OPENAI_TRANSCRIPTION_DEPLOYMENT_NAME || "",
+      openaiApiVersion: env.AZURE_OPENAI_API_VERSION || "2024-10-21",
+    },
     whisper: {
       localCommand: env.WHISPER_LOCAL_COMMAND || "",
       timeoutMs: parseInt(env.LOCAL_TRANSCRIBE_TIMEOUT_MS || "120000", 10),
