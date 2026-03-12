@@ -1,0 +1,662 @@
+TAP version 13
+# Subtest: anthropicProvider
+    # Subtest: returns unconfigured warning when API key is empty
+    ok 1 - returns unconfigured warning when API key is empty
+      ---
+      duration_ms: 1.016041
+      type: 'test'
+      ...
+    1..1
+ok 1 - anthropicProvider
+  ---
+  duration_ms: 1.802875
+  type: 'suite'
+  ...
+# Subtest: bergetNoteProvider
+    # Subtest: returns an unconfigured warning when API key is missing
+    ok 1 - returns an unconfigured warning when API key is missing
+      ---
+      duration_ms: 0.476541
+      type: 'test'
+      ...
+    # Subtest: parses JSON note output from the OpenAI-compatible Berget endpoint
+    ok 2 - parses JSON note output from the OpenAI-compatible Berget endpoint
+      ---
+      duration_ms: 1.683084
+      type: 'test'
+      ...
+    1..2
+ok 2 - bergetNoteProvider
+  ---
+  duration_ms: 2.946
+  type: 'suite'
+  ...
+# Subtest: bergetProvider
+    # Subtest: returns unconfigured warning when API key is empty
+    ok 1 - returns unconfigured warning when API key is empty
+      ---
+      duration_ms: 0.390375
+      type: 'test'
+      ...
+    # Subtest: passes through text-simulated-audio
+    ok 2 - passes through text-simulated-audio
+      ---
+      duration_ms: 0.050333
+      type: 'test'
+      ...
+    # Subtest: parses verbose OpenAI-compatible payloads from Berget
+    ok 3 - parses verbose OpenAI-compatible payloads from Berget
+      ---
+      duration_ms: 28.742834
+      type: 'test'
+      ...
+    1..3
+ok 3 - bergetProvider
+  ---
+  duration_ms: 29.697916
+  type: 'suite'
+  ...
+# Subtest: parseArgs parses --flag value pairs
+ok 4 - parseArgs parses --flag value pairs
+  ---
+  duration_ms: 2.373958
+  type: 'test'
+  ...
+# Subtest: parseArgs parses --flag=value syntax
+ok 5 - parseArgs parses --flag=value syntax
+  ---
+  duration_ms: 0.085292
+  type: 'test'
+  ...
+# Subtest: parseArgs handles boolean flags
+ok 6 - parseArgs handles boolean flags
+  ---
+  duration_ms: 0.062959
+  type: 'test'
+  ...
+# Subtest: parseArgs collects positional arguments
+ok 7 - parseArgs collects positional arguments
+  ---
+  duration_ms: 0.087416
+  type: 'test'
+  ...
+# Subtest: mimeFromPath detects common audio formats
+ok 8 - mimeFromPath detects common audio formats
+  ---
+  duration_ms: 0.10875
+  type: 'test'
+  ...
+# Subtest: cli transcription provider returns placeholder when no command
+ok 9 - cli transcription provider returns placeholder when no command
+  ---
+  duration_ms: 0.668667
+  type: 'test'
+  ...
+# Subtest: cli transcription provider passes through text-simulated-audio
+ok 10 - cli transcription provider passes through text-simulated-audio
+  ---
+  duration_ms: 0.101625
+  type: 'test'
+  ...
+# Subtest: cli note provider returns placeholder when no command
+ok 11 - cli note provider returns placeholder when no command
+  ---
+  duration_ms: 0.734458
+  type: 'test'
+  ...
+# Subtest: transcription provider factory creates cli provider
+ok 12 - transcription provider factory creates cli provider
+  ---
+  duration_ms: 4.1025
+  type: 'test'
+  ...
+# Subtest: note provider factory creates cli provider
+ok 13 - note provider factory creates cli provider
+  ---
+  duration_ms: 2.309167
+  type: 'test'
+  ...
+# Subtest: cli/transcribe.js --help exits 0
+ok 14 - cli/transcribe.js --help exits 0
+  ---
+  duration_ms: 85.128208
+  type: 'test'
+  ...
+# Subtest: cli/transcribe.js with mock provider transcribes audio file
+ok 15 - cli/transcribe.js with mock provider transcribes audio file
+  ---
+  duration_ms: 70.293333
+  type: 'test'
+  ...
+# Subtest: cli/note.js --help exits 0
+ok 16 - cli/note.js --help exits 0
+  ---
+  duration_ms: 51.314375
+  type: 'test'
+  ...
+# Subtest: cli/note.js with mock provider generates note
+ok 17 - cli/note.js with mock provider generates note
+  ---
+  duration_ms: 49.182333
+  type: 'test'
+  ...
+# Subtest: compiled scribe-transcribe with mock provider
+ok 18 - compiled scribe-transcribe with mock provider
+  ---
+  duration_ms: 699.770167
+  type: 'test'
+  ...
+# Subtest: compiled scribe-note with mock provider
+ok 19 - compiled scribe-note with mock provider
+  ---
+  duration_ms: 718.862708
+  type: 'test'
+  ...
+# Subtest: GET /health returns service status
+ok 20 - GET /health returns service status
+  ---
+  duration_ms: 3.256334
+  type: 'test'
+  ...
+# Subtest: GET / serves the public landing page when web UI is enabled
+ok 21 - GET / serves the public landing page when web UI is enabled
+  ---
+  duration_ms: 0.557042
+  type: 'test'
+  ...
+# Subtest: GET /app serves the branded recorder web app
+ok 22 - GET /app serves the branded recorder web app
+  ---
+  duration_ms: 0.685708
+  type: 'test'
+  ...
+# Subtest: GET /local-model-worker.js serves the browser local-model worker
+ok 23 - GET /local-model-worker.js serves the browser local-model worker
+  ---
+  duration_ms: 0.541958
+  type: 'test'
+  ...
+# Subtest: HEAD /site.css returns the branded stylesheet headers
+ok 24 - HEAD /site.css returns the branded stylesheet headers
+  ---
+  duration_ms: 0.282709
+  type: 'test'
+  ...
+# Subtest: GET /privacy-policy.html serves the privacy page when web UI is enabled
+ok 25 - GET /privacy-policy.html serves the privacy page when web UI is enabled
+  ---
+  duration_ms: 0.222333
+  type: 'test'
+  ...
+# Subtest: GET /support.html serves the support page when web UI is enabled
+ok 26 - GET /support.html serves the support page when web UI is enabled
+  ---
+  duration_ms: 0.2495
+  type: 'test'
+  ...
+# Subtest: GET /settings is hidden when settings UI is disabled
+ok 27 - GET /settings is hidden when settings UI is disabled
+  ---
+  duration_ms: 0.123
+  type: 'test'
+  ...
+# Subtest: POST /v1/settings can be disabled in production
+ok 28 - POST /v1/settings can be disabled in production
+  ---
+  duration_ms: 1.550042
+  type: 'test'
+  ...
+# Subtest: POST /v1/encounters/scribe requires bearer auth when configured
+ok 29 - POST /v1/encounters/scribe requires bearer auth when configured
+  ---
+  duration_ms: 0.358292
+  type: 'test'
+  ...
+# Subtest: POST /v1/encounters/scribe accepts bearer auth when configured
+ok 30 - POST /v1/encounters/scribe accepts bearer auth when configured
+  ---
+  duration_ms: 3.792792
+  type: 'test'
+  ...
+# Subtest: POST /v1/client/bootstrap issues a trial client token
+ok 31 - POST /v1/client/bootstrap issues a trial client token
+  ---
+  duration_ms: 2.707417
+  type: 'test'
+  ...
+# Subtest: POST /v1/encounters/scribe accepts a bootstrap client token
+ok 32 - POST /v1/encounters/scribe accepts a bootstrap client token
+  ---
+  duration_ms: 2.080709
+  type: 'test'
+  ...
+# Subtest: POST /v1/chat/completions accepts a bootstrap client token and proxies to Berget
+ok 33 - POST /v1/chat/completions accepts a bootstrap client token and proxies to Berget
+  ---
+  duration_ms: 32.004
+  type: 'test'
+  ...
+# Subtest: POST /v1/chat/completions enforces client trial request caps
+ok 34 - POST /v1/chat/completions enforces client trial request caps
+  ---
+  duration_ms: 1.3815
+  type: 'test'
+  ...
+# Subtest: POST /v1/encounters/scribe enforces client trial request caps
+ok 35 - POST /v1/encounters/scribe enforces client trial request caps
+  ---
+  duration_ms: 1.180208
+  type: 'test'
+  ...
+# Subtest: POST /v1/export/fhir-document-reference validates noteText
+ok 36 - POST /v1/export/fhir-document-reference validates noteText
+  ---
+  duration_ms: 0.157583
+  type: 'test'
+  ...
+# Subtest: POST /v1/export/fhir-document-reference returns DocumentReference
+ok 37 - POST /v1/export/fhir-document-reference returns DocumentReference
+  ---
+  duration_ms: 1.764417
+  type: 'test'
+  ...
+# Subtest: POST /v1/transcribe/upload handles multipart audio file
+ok 38 - POST /v1/transcribe/upload handles multipart audio file
+  ---
+  duration_ms: 1.403791
+  type: 'test'
+  ...
+# Subtest: POST /v1/transcribe/upload accepts a bootstrap client token and records quota usage
+ok 39 - POST /v1/transcribe/upload accepts a bootstrap client token and records quota usage
+  ---
+  duration_ms: 1.567792
+  type: 'test'
+  ...
+# Subtest: POST /v1/transcribe/upload rejects non-multipart content
+ok 40 - POST /v1/transcribe/upload rejects non-multipart content
+  ---
+  duration_ms: 0.118667
+  type: 'test'
+  ...
+# Subtest: POST /v1/transcribe/upload rejects multipart without audio file
+ok 41 - POST /v1/transcribe/upload rejects multipart without audio file
+  ---
+  duration_ms: 0.200541
+  type: 'test'
+  ...
+# Subtest: POST /v1/transcripts/search returns accent-insensitive matches
+ok 42 - POST /v1/transcripts/search returns accent-insensitive matches
+  ---
+  duration_ms: 0.914833
+  type: 'test'
+  ...
+# Subtest: POST /v1/transcripts/search validates query
+ok 43 - POST /v1/transcripts/search validates query
+  ---
+  duration_ms: 0.147916
+  type: 'test'
+  ...
+# Subtest: GET /v1/providers includes Berget note support
+ok 44 - GET /v1/providers includes Berget note support
+  ---
+  duration_ms: 0.076375
+  type: 'test'
+  ...
+# Subtest: deepgramProvider
+    # Subtest: returns unconfigured warning when API key is empty
+    ok 1 - returns unconfigured warning when API key is empty
+      ---
+      duration_ms: 1.5975
+      type: 'test'
+      ...
+    # Subtest: passes through text-simulated-audio
+    ok 2 - passes through text-simulated-audio
+      ---
+      duration_ms: 0.161583
+      type: 'test'
+      ...
+    # Subtest: preserves words and utterance timing metadata from Deepgram responses
+    ok 3 - preserves words and utterance timing metadata from Deepgram responses
+      ---
+      duration_ms: 0.81125
+      type: 'test'
+      ...
+    1..3
+ok 45 - deepgramProvider
+  ---
+  duration_ms: 3.92675
+  type: 'suite'
+  ...
+# Subtest: diarizeClient
+    # Subtest: sends WAV to sidecar and returns diarization result
+    ok 1 - sends WAV to sidecar and returns diarization result
+      ---
+      duration_ms: 33.555
+      type: 'test'
+      ...
+    # Subtest: throws on sidecar error
+    ok 2 - throws on sidecar error
+      ---
+      duration_ms: 6.898209
+      type: 'test'
+      ...
+    1..2
+ok 46 - diarizeClient
+  ---
+  duration_ms: 41.083666
+  type: 'suite'
+  ...
+# Subtest: buildFhirDocumentReference creates preliminary note with base64 attachment
+ok 47 - buildFhirDocumentReference creates preliminary note with base64 attachment
+  ---
+  duration_ms: 2.097917
+  type: 'test'
+  ...
+# Subtest: geminiProvider
+    # Subtest: returns unconfigured warning when API key is empty
+    ok 1 - returns unconfigured warning when API key is empty
+      ---
+      duration_ms: 0.377125
+      type: 'test'
+      ...
+    1..1
+ok 48 - geminiProvider
+  ---
+  duration_ms: 0.8055
+  type: 'suite'
+  ...
+# Subtest: google speech provider preserves word timing metadata
+ok 49 - google speech provider preserves word timing metadata
+  ---
+  duration_ms: 1.16175
+  type: 'test'
+  ...
+# Subtest: parseMultipartFormData extracts text fields and file parts
+ok 50 - parseMultipartFormData extracts text fields and file parts
+  ---
+  duration_ms: 0.720041
+  type: 'test'
+  ...
+# Subtest: parseMultipartFormData throws on missing boundary
+ok 51 - parseMultipartFormData throws on missing boundary
+  ---
+  duration_ms: 0.477042
+  type: 'test'
+  ...
+# Subtest: ollama provider parses direct JSON response payload
+ok 52 - ollama provider parses direct JSON response payload
+  ---
+  duration_ms: 0.85425
+  type: 'test'
+  ...
+# Subtest: ollama provider falls back to reasoning payload when response is empty
+ok 53 - ollama provider falls back to reasoning payload when response is empty
+  ---
+  duration_ms: 0.187583
+  type: 'test'
+  ...
+# Subtest: openai transcription provider parses verbose word and segment timestamps
+ok 54 - openai transcription provider parses verbose word and segment timestamps
+  ---
+  duration_ms: 27.682208
+  type: 'test'
+  ...
+# Subtest: openai transcription provider retries without verbose parameters for compatible endpoints
+ok 55 - openai transcription provider retries without verbose parameters for compatible endpoints
+  ---
+  duration_ms: 0.263042
+  type: 'test'
+  ...
+# Subtest: redactBasicPhi redacts common PHI markers
+ok 56 - redactBasicPhi redacts common PHI markers
+  ---
+  duration_ms: 0.918083
+  type: 'test'
+  ...
+# Subtest: maybeRedactForProvider only redacts for API providers when enabled
+ok 57 - maybeRedactForProvider only redacts for API providers when enabled
+  ---
+  duration_ms: 0.073416
+  type: 'test'
+  ...
+# Subtest: buildNotePrompt
+    # Subtest: includes JSON return contract and style/specialty
+    ok 1 - includes JSON return contract and style/specialty
+      ---
+      duration_ms: 0.5255
+      type: 'test'
+      ...
+    # Subtest: generates H&P style instructions
+    ok 2 - generates H&P style instructions
+      ---
+      duration_ms: 0.081834
+      type: 'test'
+      ...
+    # Subtest: generates Progress Note style instructions
+    ok 3 - generates Progress Note style instructions
+      ---
+      duration_ms: 0.059
+      type: 'test'
+      ...
+    # Subtest: generates DAP style instructions
+    ok 4 - generates DAP style instructions
+      ---
+      duration_ms: 0.047917
+      type: 'test'
+      ...
+    # Subtest: generates Procedure Note style instructions
+    ok 5 - generates Procedure Note style instructions
+      ---
+      duration_ms: 0.059916
+      type: 'test'
+      ...
+    # Subtest: falls back gracefully for unknown styles
+    ok 6 - falls back gracefully for unknown styles
+      ---
+      duration_ms: 0.063708
+      type: 'test'
+      ...
+    1..6
+ok 58 - buildNotePrompt
+  ---
+  duration_ms: 1.325
+  type: 'suite'
+  ...
+# Subtest: processEncounter uses provided transcript and returns draft note
+ok 59 - processEncounter uses provided transcript and returns draft note
+  ---
+  duration_ms: 2.449625
+  type: 'test'
+  ...
+# Subtest: transcribeOnly accepts simulated audio text
+ok 60 - transcribeOnly accepts simulated audio text
+  ---
+  duration_ms: 0.157084
+  type: 'test'
+  ...
+# Subtest: processEncounter falls back to SOAP formatter text when provider note is empty
+ok 61 - processEncounter falls back to SOAP formatter text when provider note is empty
+  ---
+  duration_ms: 0.283125
+  type: 'test'
+  ...
+# Subtest: processEncounter forwards transcription language and country hints
+ok 62 - processEncounter forwards transcription language and country hints
+  ---
+  duration_ms: 0.164458
+  type: 'test'
+  ...
+# Subtest: processEncounter carries structured transcript metadata into the response
+ok 63 - processEncounter carries structured transcript metadata into the response
+  ---
+  duration_ms: 1.533542
+  type: 'test'
+  ...
+# Subtest: streamHandler
+    # Subtest: accepts WebSocket connection and returns ready message
+    ok 1 - accepts WebSocket connection and returns ready message
+      ---
+      duration_ms: 112.6665
+      type: 'test'
+      ...
+    # Subtest: rejects upgrade on non-stream paths
+    ok 2 - rejects upgrade on non-stream paths
+      ---
+      duration_ms: 1.430916
+      type: 'test'
+      ...
+    # Subtest: receives mock transcript after sending audio frames
+    ok 3 - receives mock transcript after sending audio frames
+      ---
+      duration_ms: 303.685334
+      type: 'test'
+      ...
+    1..3
+ok 64 - streamHandler
+  ---
+  duration_ms: 418.496792
+  type: 'suite'
+  ...
+# Subtest: normalizeTranscriptText collapses whitespace without changing language content
+ok 65 - normalizeTranscriptText collapses whitespace without changing language content
+  ---
+  duration_ms: 1.101959
+  type: 'test'
+  ...
+# Subtest: buildTranscriptDocument preserves timing metadata when provided
+ok 66 - buildTranscriptDocument preserves timing metadata when provided
+  ---
+  duration_ms: 2.208958
+  type: 'test'
+  ...
+# Subtest: searchTranscriptDocument matches Swedish text accent-insensitively
+ok 67 - searchTranscriptDocument matches Swedish text accent-insensitively
+  ---
+  duration_ms: 0.889417
+  type: 'test'
+  ...
+# [settings] Providers rebuilt: tx=faster-whisper, note=ollama
+# Subtest: mock transcription provider returns placeholder for audio-base64
+ok 68 - mock transcription provider returns placeholder for audio-base64
+  ---
+  duration_ms: 0.74675
+  type: 'test'
+  ...
+# Subtest: mock transcription provider passes through text-simulated-audio
+ok 69 - mock transcription provider passes through text-simulated-audio
+  ---
+  duration_ms: 0.105
+  type: 'test'
+  ...
+# Subtest: openai transcription provider returns unconfigured when no API key
+ok 70 - openai transcription provider returns unconfigured when no API key
+  ---
+  duration_ms: 0.120125
+  type: 'test'
+  ...
+# Subtest: openai transcription provider returns unconfigured for text-simulated-audio when no key
+ok 71 - openai transcription provider returns unconfigured for text-simulated-audio when no key
+  ---
+  duration_ms: 0.066584
+  type: 'test'
+  ...
+# Subtest: deepgram transcription provider returns unconfigured when no API key
+ok 72 - deepgram transcription provider returns unconfigured when no API key
+  ---
+  duration_ms: 0.136209
+  type: 'test'
+  ...
+# Subtest: google speech provider returns unconfigured when no API key
+ok 73 - google speech provider returns unconfigured when no API key
+  ---
+  duration_ms: 0.122125
+  type: 'test'
+  ...
+# Subtest: berget transcription provider returns unconfigured when no API key
+ok 74 - berget transcription provider returns unconfigured when no API key
+  ---
+  duration_ms: 0.090334
+  type: 'test'
+  ...
+# Subtest: whisper.cpp provider returns placeholder when no local command configured
+ok 75 - whisper.cpp provider returns placeholder when no local command configured
+  ---
+  duration_ms: 0.109333
+  type: 'test'
+  ...
+# Subtest: whisper.cpp provider passes through text-simulated-audio
+ok 76 - whisper.cpp provider passes through text-simulated-audio
+  ---
+  duration_ms: 0.210125
+  type: 'test'
+  ...
+# Subtest: transcription provider factory creates all supported providers
+ok 77 - transcription provider factory creates all supported providers
+  ---
+  duration_ms: 0.290375
+  type: 'test'
+  ...
+# Subtest: transcription provider factory throws for unsupported provider
+ok 78 - transcription provider factory throws for unsupported provider
+  ---
+  duration_ms: 0.190042
+  type: 'test'
+  ...
+# Subtest: upload endpoint accepts real MP3 audio and returns mock transcript
+ok 79 - upload endpoint accepts real MP3 audio and returns mock transcript
+  ---
+  duration_ms: 2.620667
+  type: 'test'
+  ...
+# Subtest: full scribe flow with mock providers produces note from transcript
+ok 80 - full scribe flow with mock providers produces note from transcript
+  ---
+  duration_ms: 2.117958
+  type: 'test'
+  ...
+# Subtest: settings endpoint returns provider and model info for UI display
+ok 81 - settings endpoint returns provider and model info for UI display
+  ---
+  duration_ms: 0.700625
+  type: 'test'
+  ...
+# Subtest: settings POST switches providers and rebuilds
+ok 82 - settings POST switches providers and rebuilds
+  ---
+  duration_ms: 18394.793083
+  type: 'test'
+  ...
+# Subtest: encodePcm16ToWav
+    # Subtest: produces a valid WAV header for PCM16 mono 16kHz
+    ok 1 - produces a valid WAV header for PCM16 mono 16kHz
+      ---
+      duration_ms: 0.599833
+      type: 'test'
+      ...
+    # Subtest: defaults to 16kHz sample rate
+    ok 2 - defaults to 16kHz sample rate
+      ---
+      duration_ms: 0.099833
+      type: 'test'
+      ...
+    # Subtest: decodes compressed audio to Float32 mono samples via ffmpeg
+    ok 3 - decodes compressed audio to Float32 mono samples via ffmpeg
+      ---
+      duration_ms: 36.259334
+      type: 'test'
+      ...
+    1..3
+ok 83 - encodePcm16ToWav
+  ---
+  duration_ms: 37.592167
+  type: 'suite'
+  ...
+1..83
+# tests 98
+# suites 9
+# pass 98
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20931.005459
