@@ -21,6 +21,9 @@ export function loadConfig(env) {
       trialMaxRequests: parseInt(env.CLIENT_TRIAL_MAX_REQUESTS || "20", 10),
       trialMaxAudioSeconds: parseInt(env.CLIENT_TRIAL_MAX_AUDIO_SECONDS || String(20 * 60), 10),
       trialMaxEstimatedCostUsd: parseFloat(env.CLIENT_TRIAL_MAX_ESTIMATED_COST_USD || "2.5"),
+      testerMaxRequests: parseInt(env.CLIENT_TESTER_MAX_REQUESTS || "1000", 10),
+      testerMaxAudioSeconds: parseInt(env.CLIENT_TESTER_MAX_AUDIO_SECONDS || String(10 * 60 * 60), 10),
+      testerMaxEstimatedCostUsd: parseFloat(env.CLIENT_TESTER_MAX_ESTIMATED_COST_USD || "50"),
       bootstrapPerIpPerHour: parseInt(env.CLIENT_BOOTSTRAP_PER_IP_PER_HOUR || "10", 10),
       bootstrapPerInstallPerDay: parseInt(env.CLIENT_BOOTSTRAP_PER_INSTALL_PER_DAY || "3", 10),
       estimatedCostPerAudioMinuteUsd: parseFloat(env.CLIENT_ESTIMATED_COST_PER_AUDIO_MINUTE_USD || "0.08"),
@@ -80,6 +83,13 @@ export function loadConfig(env) {
       baseUrl: env.BERGET_BASE_URL || "https://api.berget.ai",
       transcribeModel: env.BERGET_TRANSCRIBE_MODEL || "KBLab/kb-whisper-large",
       noteModel: env.BERGET_NOTE_MODEL || "openai/gpt-oss-120b",
+    },
+    azure: {
+      openaiApiKey: env.AZURE_OPENAI_API_KEY || "",
+      openaiEndpoint: env.AZURE_OPENAI_ENDPOINT || "",
+      openaiDeploymentName: env.AZURE_OPENAI_DEPLOYMENT_NAME || "",
+      transcriptionDeploymentName: env.AZURE_OPENAI_TRANSCRIPTION_DEPLOYMENT_NAME || "",
+      openaiApiVersion: env.AZURE_OPENAI_API_VERSION || "2024-10-21",
     },
     whisper: {
       localCommand: env.WHISPER_LOCAL_COMMAND || "",

@@ -5,6 +5,10 @@ import {
   safeJson,
   transcriptFromPlainText,
 } from "./resultAdapter.js";
+import {
+  hasAzureTranscriptionFallback,
+  transcribeWithAzureOpenAi,
+} from "../shared/azureOpenAi.js";
 
 export function createBergetTranscriptionProvider(config) {
   return {
@@ -15,6 +19,10 @@ export function createBergetTranscriptionProvider(config) {
       }
 
       if (!config.berget.apiKey) {
+        if (hasAzureTranscriptionFallback(config)) {
+          return transcribeWithAzureOpenAi(config, input);
+        }
+
         return transcriptFromPlainText(
           "[berget provider not configured] Set BERGET_API_KEY to enable Berget AI transcription.",
         );
@@ -29,9 +37,16 @@ export function createBergetTranscriptionProvider(config) {
       const timeout = setTimeout(() => controller.abort(), 120000);
 
       try {
-        return await requestBergetTranscription(config, input, bytes, controller.signal, {
-          verbose: true,
-        });
+        try {
+          return await requestBergetTranscription(config, input, bytes, controller.signal, {
+            verbose: true,
+          });
+        } catch (error) {
+          if (hasAzureTranscriptionFallback(config) && shouldFallbackToAzure(error)) {
+            return transcribeWithAzureOpenAi(config, input);
+          }
+          throw error;
+        }
       } finally {
         clearTimeout(timeout);
       }
@@ -109,5 +124,17 @@ function shouldRetryWithoutVerbose(status, json, text) {
     || haystack.includes("timestamp")
     || haystack.includes("verbose_json")
     || haystack.includes("granularit")
+  );
+}
+
+function shouldFallbackToAzure(error) {
+  const status = Number(error?.statusCode || 0);
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    status >= 500
+    || message.includes("timeout")
+    || message.includes("model_overloaded")
+    || message.includes("internal_error")
+    || message.includes("server_error")
   );
 }

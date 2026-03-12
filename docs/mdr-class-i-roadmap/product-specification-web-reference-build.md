@@ -1,0 +1,208 @@
+# Product Specification For OMS Class I Web Reference Build
+
+Document ID: OMS-MDR-CL1-PRODUCT-SPECIFICATION-WEB-REFERENCE-BUILD
+Version: 0.1
+Status: Draft
+Owner: Birger Moëll
+
+Last updated: 2026-03-11
+
+This document defines the recommended first CE-marked configuration for Open Medical Scribe as an ordinary Class I medical device software product.
+
+This specification is intentionally narrow. It is written to support one manufacturer-controlled web deployment operated by the legal manufacturer.
+
+## Regulatory position
+
+Recommended first certified configuration:
+
+- manufacturer-controlled web deployment
+- Sweden-first hosting and operations
+- one locked production configuration
+- browser client plus controlled backend
+- no customer-side provider switching
+- no self-hosted variants inside the CE-marked scope
+
+Why this is the recommended first path:
+
+- It is easier to control than the full upstream repository.
+- It is easier to validate than many desktop, mobile, and self-hosted variants.
+- It allows the manufacturer to freeze models, prompts, runtime settings, and operational safeguards.
+- It creates a cleaner post-market surveillance and change-control boundary.
+
+## Product name
+
+Working name: `OMS Class I Web Reference Build`
+
+This is a placeholder product name for the CE-marked configuration. It may later be branded differently while remaining traceable to the same regulated device.
+
+## Manufacturer
+
+Working manufacturer: see `manufacturer-details-and-role-assignment.md`.
+
+## Intended purpose summary
+
+The device is intended to support clinical documentation by converting clinical encounter audio into transcript-grounded draft documentation for review and editing by licensed healthcare professionals.
+
+The device is not intended to diagnose, triage, predict, recommend treatment, recommend referral, prioritize urgency, or otherwise provide patient-specific clinical decision support.
+
+## Deployment model
+
+### In-scope deployment
+
+The CE-marked reference build is a software-as-a-service deployment operated by the manufacturer or by an infrastructure provider under the manufacturer's quality system and contractual control.
+
+Core characteristics:
+
+- browser-based clinician-facing UI
+- manufacturer-controlled backend
+- manufacturer-controlled runtime configuration
+- manufacturer-controlled release process
+- manufacturer-controlled audit logging and incident handling
+
+### Out-of-scope deployment
+
+The following are outside the CE-marked scope unless separately validated and added to the technical documentation:
+
+- customer self-hosting
+- arbitrary cloud deployments by third parties
+- modified forks
+- local desktop-only packaging
+- native iOS or macOS standalone builds
+- CLI-only usage
+
+Desktop and mobile clients may be added later as controlled configurations if they use the same intended purpose and a tightly aligned regulated workflow. See `platform-expansion-strategy.md`.
+
+## Geographic and hosting baseline
+
+Recommended initial operational baseline:
+
+- primary data residency target: Sweden
+- primary region: Stockholm
+- HTTPS-only public access
+- one manufacturer-controlled production environment
+- separate non-production environments for development and validation
+
+The current repo deployment guidance on Fly.io and Sweden-first hosting is a useful engineering starting point, but the regulated build should be defined by the final validated production architecture rather than by convenience alone.
+
+## Users
+
+### Intended users
+
+- licensed healthcare professionals
+- authorized clinical support staff under clinician supervision where workflow and local law allow
+
+### Non-users
+
+- patients
+- consumer users
+- autonomous clinical agents
+
+## Core workflow
+
+1. User authenticates to the manufacturer-controlled web application.
+2. User records live encounter audio or uploads encounter audio.
+3. Backend transcribes the audio using the locked production transcription stack.
+4. Backend generates a transcript-grounded draft note using the locked production note-generation stack.
+5. User reviews and edits the draft note.
+6. User explicitly approves the note before final export or copy.
+7. System records the review action and relevant audit metadata.
+
+## Functional scope inside the first certified build
+
+- live audio recording or audio upload through the web UI
+- transcription
+- transcript display
+- draft note generation
+- draft note editing
+- explicit clinician review / approval workflow
+- transcript and note history within the controlled service
+- PHI redaction where relevant for cloud processing
+- audit logging
+- export of approved documentation text
+- FHIR `DocumentReference` packaging if it remains formatting-only
+
+## Functional scope excluded from the first certified build
+
+- end-user provider switching
+- end-user model switching
+- arbitrary OpenAI-compatible endpoints
+- coding hints
+- follow-up questions generated by the model
+- warnings framed as clinical alerts
+- red-flag detection
+- triage or urgency support
+- referral support
+- diagnosis or treatment recommendations
+- unsupported self-hosting
+
+## Recommended technical baseline
+
+This section is a working recommendation, not a final architectural freeze.
+
+### Frontend
+
+- browser UI served from manufacturer-controlled domain
+- supported browser set explicitly documented in `supported-browser-matrix.md`
+- role-based access controls
+- clear `Draft` and `Approved` state markers
+
+### Backend
+
+- Node service operated in production by the manufacturer
+- fixed configuration with settings writes disabled in production
+- protected authentication and authorization layer
+- request size limits and upload controls
+- audit logging enabled
+
+### Inference stack
+
+Working Release 1.0 baseline:
+
+- one fixed cloud transcription provider: `Berget API service`
+- one fixed cloud note-generation provider: `Berget API service`
+- all inference requests routed through the manufacturer-controlled backend
+
+Alternative provider or hybrid architectures are outside the current working release baseline unless separately approved under change control and validated.
+
+Do not allow runtime switching by end users in the CE-marked build.
+
+### Data and storage
+
+- controlled storage for audit logs and required service state
+- defined retention policy
+- backup and recovery procedure
+- separation of production and non-production data
+
+## Safety controls required in the first certified build
+
+- draft status shown until clinician approval
+- final export gated by explicit user review action
+- no autonomous finalization
+- no hidden changes after user review
+- clear error handling for failed transcription or note generation
+- version traceability for the running release
+- configuration traceability for the production inference stack
+
+## Product constraints for Class I positioning
+
+- The product must remain documentation support software.
+- Generated output must remain transcript-grounded and editable.
+- The UI and marketing must not imply diagnostic or therapeutic decision support.
+- Any feature drifting toward care-decision support must be excluded or separately reclassified.
+
+## Required follow-on documents
+
+1. Device description and architecture description aligned to this specification.
+2. Supported environment specification.
+3. Software lifecycle and change-control procedure.
+4. Risk management plan and hazard analysis.
+5. Verification and validation plan for this exact deployment model.
+6. Labeling and IFU for Sweden-first release.
+
+## Decisions now recommended as fixed
+
+1. First certified deployment: manufacturer-controlled web SaaS.
+2. Self-hosted deployments: outside the certified scope in v1.
+3. End-user provider/model switching: outside the certified scope in v1.
+4. Review approval before export: required in v1.
+5. Desktop and iPhone/iPad clients: out of scope for v1 and handled as later controlled expansions.

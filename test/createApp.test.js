@@ -21,6 +21,9 @@ function baseConfig(overrides = {}) {
       trialMaxRequests: 20,
       trialMaxAudioSeconds: 20 * 60,
       trialMaxEstimatedCostUsd: 2.5,
+      testerMaxRequests: 1000,
+      testerMaxAudioSeconds: 10 * 60 * 60,
+      testerMaxEstimatedCostUsd: 50,
       bootstrapPerIpPerHour: 10,
       bootstrapPerInstallPerDay: 3,
       estimatedCostPerAudioMinuteUsd: 0.08,
@@ -116,9 +119,14 @@ async function invoke(app, { method, url, headers = {}, body }) {
     setHeader(name, value) {
       responseHeaders[String(name).toLowerCase()] = value;
     },
+    write(payload = "") {
+      const chunk = Buffer.isBuffer(payload) ? payload : Buffer.from(String(payload));
+      responseBody = Buffer.concat([responseBody, chunk]);
+    },
     end(payload = "") {
       ended = true;
-      responseBody = Buffer.isBuffer(payload) ? payload : Buffer.from(String(payload));
+      const chunk = Buffer.isBuffer(payload) ? payload : Buffer.from(String(payload));
+      responseBody = Buffer.concat([responseBody, chunk]);
     },
   };
 
@@ -220,6 +228,7 @@ test("GET /settings is hidden when settings UI is disabled", async () => {
 test("POST /v1/settings can be disabled in production", async () => {
   const app = createApp({
     config: baseConfig({
+      auth: { bearerToken: "secret-token" },
       settings: {
         file: "data/test-settings.json",
         writeEnabled: false,
@@ -229,7 +238,10 @@ test("POST /v1/settings can be disabled in production", async () => {
   const res = await invoke(app, {
     method: "POST",
     url: "/v1/settings",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer secret-token",
+    },
     body: JSON.stringify({ noteProvider: "berget" }),
   });
 
@@ -327,6 +339,285 @@ test("POST /v1/encounters/scribe accepts a bootstrap client token", async () => 
   assert.equal(res.json.clientQuota.used.requests, 1);
 });
 
+test("POST /v1/chat/completions accepts a bootstrap client token and proxies to Berget", async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    fetchCalls.push({ url, options });
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "application/json; charset=utf-8" }),
+      async text() {
+        return JSON.stringify({
+          id: "chatcmpl_test",
+          object: "chat.completion",
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: "assistant",
+                content: "Hej från Berget.",
+              },
+              finish_reason: "stop",
+            },
+          ],
+        });
+      },
+    };
+  };
+
+  try {
+    const app = createApp({
+      config: baseConfig({
+        auth: { bearerToken: "secret-token" },
+        berget: {
+          apiKey: "berget-secret",
+          baseUrl: "https://api.berget.ai",
+          transcribeModel: "KBLab/kb-whisper-large",
+          noteModel: "openai/gpt-oss-120b",
+        },
+      }),
+    });
+    const bootstrap = await invoke(app, {
+      method: "POST",
+      url: "/v1/client/bootstrap",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": "203.0.113.11",
+      },
+      body: JSON.stringify({
+        installId: "install-chat-proxy-123",
+        platform: "ios",
+        attestation: {
+          provider: "app_attest",
+          status: "supported_key_ready",
+          isSupported: true,
+        },
+      }),
+    });
+
+    const res = await invoke(app, {
+      method: "POST",
+      url: "/v1/chat/completions",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${bootstrap.json.bearerToken}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "Hej" }],
+      }),
+    });
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.json.choices[0].message.content, "Hej från Berget.");
+    assert.equal(res.json.clientQuota.used.requests, 1);
+    assert.equal(fetchCalls.length, 1);
+    assert.equal(fetchCalls[0].url, "https://api.berget.ai/v1/chat/completions");
+    assert.equal(fetchCalls[0].options.headers.Authorization, "Bearer berget-secret");
+    const upstreamBody = JSON.parse(fetchCalls[0].options.body);
+    assert.equal(upstreamBody.model, "openai/gpt-oss-120b");
+    assert.equal(upstreamBody.messages[0].content, "Hej");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("POST /v1/chat/completions enforces client trial request caps", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "application/json; charset=utf-8" }),
+    async text() {
+      return JSON.stringify({
+        id: "chatcmpl_limit",
+        object: "chat.completion",
+        choices: [
+          {
+            index: 0,
+            message: { role: "assistant", content: "ok" },
+            finish_reason: "stop",
+          },
+        ],
+      });
+    },
+  });
+
+  try {
+    const app = createApp({
+      config: baseConfig({
+        auth: { bearerToken: "secret-token" },
+        clientAccess: {
+          trialMaxRequests: 1,
+          trialMaxAudioSeconds: 20 * 60,
+          trialMaxEstimatedCostUsd: 2.5,
+          bootstrapPerIpPerHour: 10,
+          bootstrapPerInstallPerDay: 3,
+          estimatedCostPerAudioMinuteUsd: 0.08,
+          requireAttestation: false,
+        },
+        berget: {
+          apiKey: "berget-secret",
+          baseUrl: "https://api.berget.ai",
+          transcribeModel: "KBLab/kb-whisper-large",
+          noteModel: "openai/gpt-oss-120b",
+        },
+      }),
+    });
+
+    const bootstrap = await invoke(app, {
+      method: "POST",
+      url: "/v1/client/bootstrap",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": "203.0.113.12",
+      },
+      body: JSON.stringify({
+        installId: "install-chat-limit-123",
+        platform: "ios",
+        attestation: {
+          provider: "app_attest",
+          status: "supported_key_ready",
+          isSupported: true,
+        },
+      }),
+    });
+
+    const first = await invoke(app, {
+      method: "POST",
+      url: "/v1/chat/completions",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${bootstrap.json.bearerToken}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "Hej" }],
+      }),
+    });
+    assert.equal(first.statusCode, 200);
+
+    const second = await invoke(app, {
+      method: "POST",
+      url: "/v1/chat/completions",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${bootstrap.json.bearerToken}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "En gång till" }],
+      }),
+    });
+
+    assert.equal(second.statusCode, 429);
+    assert.equal(second.json.code, "trial_request_limit_reached");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("POST /v1/client/admin/promote upgrades a client to tester mode with reset usage", async () => {
+  const app = createApp({
+    config: baseConfig({
+      auth: { bearerToken: "secret-token" },
+      clientAccess: {
+        trialMaxRequests: 1,
+        trialMaxAudioSeconds: 60,
+        trialMaxEstimatedCostUsd: 1,
+        testerMaxRequests: 200,
+        testerMaxAudioSeconds: 7200,
+        testerMaxEstimatedCostUsd: 25,
+        bootstrapPerIpPerHour: 10,
+        bootstrapPerInstallPerDay: 3,
+        estimatedCostPerAudioMinuteUsd: 0.08,
+        requireAttestation: false,
+      },
+    }),
+  });
+
+  const bootstrap = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/bootstrap",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.44",
+    },
+    body: JSON.stringify({
+      installId: "install-promote-123",
+      platform: "ios",
+      attestation: {
+        provider: "app_attest",
+        status: "supported_key_ready",
+        isSupported: true,
+      },
+    }),
+  });
+
+  const promoted = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/admin/promote",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer secret-token",
+    },
+    body: JSON.stringify({
+      clientId: bootstrap.json.clientId,
+      resetUsage: true,
+    }),
+  });
+
+  assert.equal(promoted.statusCode, 200);
+  assert.equal(promoted.json.mode, "tester");
+  assert.equal(promoted.json.quota.used.requests, 0);
+  assert.equal(promoted.json.quota.limits.requests, 200);
+});
+
+test("GET /v1/client/admin/clients lists active clients with modes", async () => {
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
+
+  const bootstrap = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/bootstrap",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.45",
+    },
+    body: JSON.stringify({
+      installId: "install-list-123",
+      platform: "ios",
+      attestation: {
+        provider: "app_attest",
+        status: "supported_key_ready",
+        isSupported: true,
+      },
+    }),
+  });
+
+  const listed = await invoke(app, {
+    method: "GET",
+    url: "/v1/client/admin/clients",
+    headers: {
+      authorization: "Bearer secret-token",
+    },
+  });
+
+  assert.equal(listed.statusCode, 200);
+  assert.ok(Array.isArray(listed.json.clients));
+  assert.ok(listed.json.clients.some((client) => client.clientId === bootstrap.json.clientId && client.mode === "trial"));
+});
+
+test("admin client routes are disabled when no admin bearer token is configured", async () => {
+  const app = createApp({ config: baseConfig() });
+
+  const listed = await invoke(app, {
+    method: "GET",
+    url: "/v1/client/admin/clients",
+  });
+
+  assert.equal(listed.statusCode, 503);
+  assert.match(listed.json.error, /disabled/i);
+});
+
 test("POST /v1/encounters/scribe enforces client trial request caps", async () => {
   const app = createApp({
     config: baseConfig({
@@ -385,11 +676,14 @@ test("POST /v1/encounters/scribe enforces client trial request caps", async () =
 });
 
 test("POST /v1/export/fhir-document-reference validates noteText", async () => {
-  const app = createApp({ config: baseConfig() });
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
   const res = await invoke(app, {
     method: "POST",
     url: "/v1/export/fhir-document-reference",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer secret-token",
+    },
     body: JSON.stringify({ noteText: "   " }),
   });
 
@@ -398,11 +692,14 @@ test("POST /v1/export/fhir-document-reference validates noteText", async () => {
 });
 
 test("POST /v1/export/fhir-document-reference returns DocumentReference", async () => {
-  const app = createApp({ config: baseConfig() });
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
   const res = await invoke(app, {
     method: "POST",
     url: "/v1/export/fhir-document-reference",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer secret-token",
+    },
     body: JSON.stringify({
       noteText: "S: cough\nO: lungs clear",
       encounterId: "enc_1",
@@ -439,6 +736,50 @@ test("POST /v1/transcribe/upload handles multipart audio file", async () => {
   assert.equal(res.json.transcriptDocument.text, res.json.transcript);
 });
 
+test("POST /v1/transcribe/upload accepts a bootstrap client token and records quota usage", async () => {
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
+  const bootstrap = await invoke(app, {
+    method: "POST",
+    url: "/v1/client/bootstrap",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.21",
+    },
+    body: JSON.stringify({
+      installId: "install-transcribe-upload-123",
+      platform: "ios",
+      attestation: {
+        provider: "app_attest",
+        status: "supported_key_ready",
+        isSupported: true,
+      },
+    }),
+  });
+
+  const boundary = "voiceBoundary";
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="audio"; filename="voice.m4a"\r\n` +
+    `Content-Type: audio/mp4\r\n\r\n` +
+    `voicebytes\r\n` +
+    `--${boundary}--\r\n`;
+
+  const res = await invoke(app, {
+    method: "POST",
+    url: "/v1/transcribe/upload",
+    headers: {
+      "content-type": `multipart/form-data; boundary=${boundary}`,
+      authorization: `Bearer ${bootstrap.json.bearerToken}`,
+    },
+    body: Buffer.from(body, "latin1"),
+  });
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json.filename, "voice.m4a");
+  assert.equal(res.json.clientQuota.used.requests, 1);
+  assert.ok(res.json.clientQuota.used.audioSeconds >= 1);
+});
+
 test("POST /v1/transcribe/upload rejects non-multipart content", async () => {
   const app = createApp({ config: baseConfig() });
   const res = await invoke(app, {
@@ -473,11 +814,14 @@ test("POST /v1/transcribe/upload rejects multipart without audio file", async ()
 });
 
 test("POST /v1/transcripts/search returns accent-insensitive matches", async () => {
-  const app = createApp({ config: baseConfig() });
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
   const res = await invoke(app, {
     method: "POST",
     url: "/v1/transcripts/search",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer secret-token",
+    },
     body: JSON.stringify({
       transcript: "Patienten har ömhet i bröstet och ny hosta sedan igår.",
       query: "omhet",
@@ -491,11 +835,14 @@ test("POST /v1/transcripts/search returns accent-insensitive matches", async () 
 });
 
 test("POST /v1/transcripts/search validates query", async () => {
-  const app = createApp({ config: baseConfig() });
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
   const res = await invoke(app, {
     method: "POST",
     url: "/v1/transcripts/search",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer secret-token",
+    },
     body: JSON.stringify({ transcript: "Patienten mår bra." }),
   });
 
@@ -504,8 +851,12 @@ test("POST /v1/transcripts/search validates query", async () => {
 });
 
 test("GET /v1/providers includes Berget note support", async () => {
-  const app = createApp({ config: baseConfig() });
-  const res = await invoke(app, { method: "GET", url: "/v1/providers" });
+  const app = createApp({ config: baseConfig({ auth: { bearerToken: "secret-token" } }) });
+  const res = await invoke(app, {
+    method: "GET",
+    url: "/v1/providers",
+    headers: { authorization: "Bearer secret-token" },
+  });
 
   assert.equal(res.statusCode, 200);
   assert.ok(res.json.supported.note.some((provider) => provider.id === "berget"));

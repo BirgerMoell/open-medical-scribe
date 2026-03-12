@@ -14,6 +14,11 @@ export function createClientAccessService(config, options = {}) {
     estimatedCostPerAudioMinuteUsd: config?.clientAccess?.estimatedCostPerAudioMinuteUsd ?? 0.08,
     requireAttestation: config?.clientAccess?.requireAttestation ?? false,
   };
+  const testerConfig = {
+    maxRequests: config?.clientAccess?.testerMaxRequests ?? 1000,
+    maxAudioSeconds: config?.clientAccess?.testerMaxAudioSeconds ?? 10 * 60 * 60,
+    maxEstimatedCostUsd: config?.clientAccess?.testerMaxEstimatedCostUsd ?? 50,
+  };
 
   function loadState() {
     try {
@@ -78,10 +83,14 @@ export function createClientAccessService(config, options = {}) {
       client.bootstrapCount = (client.bootstrapCount || 0) + 1;
       client.platform = platform || client.platform || "unknown";
       client.attestation = attestationSummary;
+      client.mode = normalizeMode(client.mode);
+      client.quotas = normalizeQuotas(client.quotas, client.mode === "tester" ? testerConfig : trialConfig);
+      client.usage = normalizeUsage(client.usage);
     } else {
       client = {
         clientId: `cli_${randomBytes(8).toString("hex")}`,
         status: "active",
+        mode: "trial",
         installIdHash: installHash,
         tokenHash,
         createdAt: timestamp,
@@ -97,11 +106,7 @@ export function createClientAccessService(config, options = {}) {
           audioSeconds: 0,
           estimatedCostUsd: 0,
         },
-        quotas: {
-          maxRequests: trialConfig.maxRequests,
-          maxAudioSeconds: trialConfig.maxAudioSeconds,
-          maxEstimatedCostUsd: trialConfig.maxEstimatedCostUsd,
-        },
+        quotas: normalizeQuotas(null, trialConfig),
       };
       state.clients.push(client);
     }
@@ -125,6 +130,7 @@ export function createClientAccessService(config, options = {}) {
 
     return {
       clientId: client.clientId,
+      mode: normalizeMode(client.mode),
       quotas: client.quotas,
       usage: client.usage,
       attestation: client.attestation,
@@ -153,6 +159,7 @@ export function createClientAccessService(config, options = {}) {
 
     return {
       clientId: client.clientId,
+      mode: normalizeMode(client.mode),
       quotas: client.quotas,
       usage: client.usage,
       attestation: client.attestation,
@@ -179,17 +186,71 @@ export function createClientAccessService(config, options = {}) {
     return buildQuotaSnapshot(client);
   }
 
+  function recordChatUsage(clientId, { estimatedCostUsd = 0 } = {}) {
+    const state = loadState();
+    const client = state.clients.find((entry) => entry.clientId === clientId && entry.status === "active");
+    if (!client) {
+      return null;
+    }
+
+    client.lastSeenAt = new Date(now()).toISOString();
+    client.usage.requestCount += 1;
+    client.usage.estimatedCostUsd = roundUsd(client.usage.estimatedCostUsd + Math.max(0, Number(estimatedCostUsd) || 0));
+    saveState(state);
+
+    return buildQuotaSnapshot(client);
+  }
+
+  function promoteClient(clientId, { resetUsage = false, quotas = {} } = {}) {
+    const state = loadState();
+    const client = state.clients.find((entry) => entry.clientId === clientId && entry.status === "active");
+    if (!client) {
+      const error = new Error("Unknown client.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    client.mode = "tester";
+    client.quotas = normalizeQuotas(quotas, testerConfig);
+    client.usage = resetUsage
+      ? { requestCount: 0, audioSeconds: 0, estimatedCostUsd: 0 }
+      : normalizeUsage(client.usage);
+    client.lastSeenAt = new Date(now()).toISOString();
+    saveState(state);
+
+    return buildBootstrapResponse(client);
+  }
+
+  function listClients() {
+    const state = loadState();
+    return state.clients
+      .filter((entry) => entry.status === "active")
+      .map((entry) => ({
+        clientId: entry.clientId,
+        mode: normalizeMode(entry.mode),
+        platform: entry.platform,
+        lastSeenAt: entry.lastSeenAt,
+        createdAt: entry.createdAt,
+        bootstrapCount: entry.bootstrapCount || 0,
+        quota: buildQuotaSnapshot(entry),
+      }))
+      .sort((a, b) => String(b.lastSeenAt || "").localeCompare(String(a.lastSeenAt || "")));
+  }
+
   return {
     issueBootstrapToken,
     authenticateClientToken,
     assertCanUseClient,
     recordScribeUsage,
+    recordChatUsage,
+    promoteClient,
+    listClients,
   };
 }
 
 function normalizeState(state) {
   return {
-    clients: Array.isArray(state.clients) ? state.clients : [],
+    clients: Array.isArray(state.clients) ? state.clients.map(normalizeClient) : [],
     bootstrapWindows: {
       byIp: state.bootstrapWindows?.byIp && typeof state.bootstrapWindows.byIp === "object"
         ? state.bootstrapWindows.byIp
@@ -198,6 +259,48 @@ function normalizeState(state) {
         ? state.bootstrapWindows.byInstall
         : {},
     },
+  };
+}
+
+function normalizeClient(client) {
+  const mode = normalizeMode(client?.mode);
+  const defaults = mode === "tester"
+    ? {
+        maxRequests: client?.quotas?.maxRequests ?? 1000,
+        maxAudioSeconds: client?.quotas?.maxAudioSeconds ?? 10 * 60 * 60,
+        maxEstimatedCostUsd: client?.quotas?.maxEstimatedCostUsd ?? 50,
+      }
+    : {
+        maxRequests: client?.quotas?.maxRequests ?? 20,
+        maxAudioSeconds: client?.quotas?.maxAudioSeconds ?? 20 * 60,
+        maxEstimatedCostUsd: client?.quotas?.maxEstimatedCostUsd ?? 2.5,
+      };
+
+  return {
+    ...client,
+    mode,
+    usage: normalizeUsage(client?.usage),
+    quotas: normalizeQuotas(client?.quotas, defaults),
+  };
+}
+
+function normalizeMode(mode) {
+  return mode === "tester" ? "tester" : "trial";
+}
+
+function normalizeUsage(usage) {
+  return {
+    requestCount: Math.max(0, Number(usage?.requestCount) || 0),
+    audioSeconds: Math.max(0, Number(usage?.audioSeconds) || 0),
+    estimatedCostUsd: roundUsd(Math.max(0, Number(usage?.estimatedCostUsd) || 0)),
+  };
+}
+
+function normalizeQuotas(quotas, defaults) {
+  return {
+    maxRequests: Math.max(1, Number(quotas?.maxRequests) || defaults.maxRequests),
+    maxAudioSeconds: Math.max(60, Number(quotas?.maxAudioSeconds) || defaults.maxAudioSeconds),
+    maxEstimatedCostUsd: roundUsd(Math.max(0.01, Number(quotas?.maxEstimatedCostUsd) || defaults.maxEstimatedCostUsd)),
   };
 }
 
@@ -265,7 +368,7 @@ function buildBootstrapResponse(client, bearerToken) {
   return {
     clientId: client.clientId,
     bearerToken,
-    mode: "trial",
+    mode: normalizeMode(client.mode),
     attestation: client.attestation,
     quota: buildQuotaSnapshot(client),
   };

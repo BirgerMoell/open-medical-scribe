@@ -8,6 +8,7 @@ import { parseMultipartFormData } from "../util/multipart.js";
 import { applySavedSettings, saveSettings, configToSettingsResponse } from "../services/settingsStore.js";
 import { buildTranscriptDocument, searchTranscriptDocument } from "../services/transcriptArtifacts.js";
 import { createClientAccessService } from "../services/clientAccessService.js";
+import { hasAzureChatFallback, requestAzureChatCompletion } from "../providers/shared/azureOpenAi.js";
 
 export function createApp({ config }) {
   let transcriptionProvider = createTranscriptionProvider(config);
@@ -110,6 +111,29 @@ export function createApp({ config }) {
           return jsonResponse(res, 200, bootstrap);
         }
 
+        if (req.method === "GET" && req.url === "/v1/client/admin/clients") {
+          if (ensureAdminAuthorized(req, res, config)) return;
+          return jsonResponse(res, 200, { clients: clientAccess.listClients() });
+        }
+
+        if (req.method === "POST" && req.url === "/v1/client/admin/promote") {
+          if (ensureAdminAuthorized(req, res, config)) return;
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
+          if (!body || typeof body.clientId !== "string" || !body.clientId.trim()) {
+            return jsonResponse(res, 400, { error: "clientId is required" });
+          }
+
+          const result = clientAccess.promoteClient(body.clientId.trim(), {
+            resetUsage: body.resetUsage === true,
+            quotas: {
+              maxRequests: body.maxRequests,
+              maxAudioSeconds: body.maxAudioSeconds,
+              maxEstimatedCostUsd: body.maxEstimatedCostUsd,
+            },
+          });
+          return jsonResponse(res, 200, result);
+        }
+
         if (req.method === "POST" && req.url === "/v1/encounters/scribe") {
           const auth = authorizeScribeRequest(req, res, config, clientAccess);
           if (!auth) return;
@@ -127,10 +151,52 @@ export function createApp({ config }) {
           return jsonResponse(res, 200, result);
         }
 
+        if (req.method === "POST" && req.url === "/v1/chat/completions") {
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
+
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
+          const completion = await resolveHostedChatCompletion(config, body);
+          const payload = completion.payload;
+          const quota = auth.kind === "client"
+            ? clientAccess.recordChatUsage(auth.clientId)
+            : null;
+
+          if (body?.stream) {
+            return relaySyntheticStreamingChatResponse(res, payload, quota, completion.provider);
+          }
+
+          if (quota && payload && typeof payload === "object" && !Array.isArray(payload)) {
+            payload.clientQuota = quota;
+          }
+          if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+            payload.provider = completion.provider;
+          }
+
+          res.statusCode = 200;
+          res.setHeader("content-type", "application/json; charset=utf-8");
+          res.setHeader("x-eir-provider", completion.provider);
+          res.end(JSON.stringify(payload));
+          return;
+        }
+
         if (req.method === "POST" && req.url === "/v1/transcribe") {
-          if (ensureAdminAuthorized(req, res, config)) return;
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const transcript = await scribeService.transcribeOnly(body);
+          if (auth.kind === "client") {
+            transcript.clientQuota = clientAccess.recordScribeUsage(auth.clientId, {
+              input: body,
+              result: transcript,
+            });
+          }
           return jsonResponse(res, 200, transcript);
         }
 
@@ -162,7 +228,11 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/transcribe/upload") {
-          if (ensureAdminAuthorized(req, res, config)) return;
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
           const contentType = req.headers?.["content-type"] || "";
           if (!String(contentType).toLowerCase().includes("multipart/form-data")) {
             throw badRequest("Expected multipart/form-data");
@@ -175,19 +245,29 @@ export function createApp({ config }) {
             throw badRequest('Missing file field "audio"');
           }
 
-          const transcript = await scribeService.transcribeOnly({
+          const input = {
             audioBase64: audio.buffer.toString("base64"),
             audioMimeType: audio.contentType,
             language: req.headers?.["x-scribe-language"],
             locale: req.headers?.["x-scribe-locale"],
             country: req.headers?.["x-scribe-country"],
-          });
+          };
+          const transcript = await scribeService.transcribeOnly(input);
 
-          return jsonResponse(res, 200, {
+          const responsePayload = {
             ...transcript,
             filename: audio.filename,
             bytes: audio.buffer.length,
-          });
+          };
+
+          if (auth.kind === "client") {
+            responsePayload.clientQuota = clientAccess.recordScribeUsage(auth.clientId, {
+              input,
+              result: responsePayload,
+            });
+          }
+
+          return jsonResponse(res, 200, responsePayload);
         }
 
         if (req.method === "POST" && req.url === "/v1/export/fhir-document-reference") {
@@ -273,11 +353,12 @@ export function createApp({ config }) {
 }
 
 function ensureAdminAuthorized(req, res, config) {
-  if (isAdminAuthorized(req, config)) {
-    return false;
+  if (!config?.auth?.bearerToken) {
+    jsonResponse(res, 503, { error: "Admin API is disabled." });
+    return true;
   }
 
-  if (!config?.auth?.bearerToken) {
+  if (isAdminAuthorized(req, config)) {
     return false;
   }
 
@@ -289,7 +370,7 @@ function ensureAdminAuthorized(req, res, config) {
 function isAdminAuthorized(req, config) {
   const expected = config?.auth?.bearerToken || "";
   if (!expected) {
-    return true;
+    return false;
   }
 
   const header = req.headers?.authorization || req.headers?.Authorization || "";
@@ -332,4 +413,168 @@ function getRequestIp(req) {
   }
 
   return req.socket?.remoteAddress || "";
+}
+
+function normalizeChatCompletionBody(config, body) {
+  const payload = body && typeof body === "object" ? { ...body } : {};
+  if (!payload.model) {
+    payload.model = config?.berget?.noteModel || "openai/gpt-oss-120b";
+  }
+  if (!Array.isArray(payload.messages)) {
+    payload.messages = [];
+  }
+  return payload;
+}
+
+async function resolveHostedChatCompletion(config, body) {
+  const normalizedBody = normalizeChatCompletionBody(config, body);
+
+  if (config?.berget?.apiKey) {
+    try {
+      const { json } = await requestBergetChatCompletion(config, normalizedBody);
+      return { provider: "berget", payload: json };
+    } catch (error) {
+      if (!shouldFailoverHostedChat(error) || !hasAzureChatFallback(config)) {
+        throw error;
+      }
+    }
+  }
+
+  if (hasAzureChatFallback(config)) {
+    const { json } = await requestAzureChatCompletion(config, normalizedBody, { timeoutMs: 180000 });
+    return { provider: "azure-openai", payload: json };
+  }
+
+  const error = new Error("No hosted chat provider is currently configured.");
+  error.statusCode = 503;
+  throw error;
+}
+
+async function requestBergetChatCompletion(config, body) {
+  if (!config?.berget?.apiKey) {
+    const error = new Error("BERGET_API_KEY is not configured for hosted chat.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 180000);
+  try {
+    const upstreamURL = `${String(config.berget.baseUrl || "https://api.berget.ai").replace(/\/+$/, "")}/v1/chat/completions`;
+    const response = await fetch(upstreamURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.berget.apiKey}`,
+      },
+      body: JSON.stringify({ ...body, stream: false }),
+      signal: controller.signal,
+    });
+
+    const text = await response.text();
+    const json = safeJsonParse(text);
+
+    if (!response.ok || json?.error) {
+      const error = new Error(
+        `Berget AI chat failed (${response.status}): ${json?.error?.message || text || response.statusText}`,
+      );
+      error.statusCode = 502;
+      error.upstreamStatus = response.status;
+      error.upstreamPayload = json;
+      throw error;
+    }
+
+    return { response, text, json };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function shouldFailoverHostedChat(error) {
+  const status = Number(error?.upstreamStatus || error?.statusCode || 0);
+  const code = String(error?.upstreamPayload?.error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    status >= 500
+    || code === "model_overloaded"
+    || code === "internal_error"
+    || code === "server_error"
+    || message.includes("timeout")
+    || message.includes("model_overloaded")
+    || message.includes("internal_error")
+    || message.includes("server_error")
+  );
+}
+
+function safeJsonParse(text) {
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error: {
+        message: "Hosted chat upstream returned non-JSON content.",
+        raw: text,
+      },
+    };
+  }
+}
+
+async function relaySyntheticStreamingChatResponse(res, payload, quota, provider) {
+  res.statusCode = 200;
+  res.setHeader("content-type", "text/event-stream; charset=utf-8");
+  res.setHeader("cache-control", "no-cache");
+  res.setHeader("connection", "keep-alive");
+  res.setHeader("x-eir-provider", provider);
+
+  if (quota) {
+    res.setHeader("x-eir-trial-remaining-requests", String(quota.remaining.requests));
+    res.setHeader("x-eir-trial-remaining-usd", String(quota.remaining.estimatedCostUsd));
+  }
+
+  const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+  const message = choice?.message || {};
+  const delta = {};
+
+  if (typeof message.content === "string" && message.content) {
+    delta.content = message.content;
+  }
+  if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    delta.tool_calls = message.tool_calls.map((call, index) => ({
+      index,
+      id: call.id,
+      type: call.type || "function",
+      function: call.function || {},
+    }));
+  }
+
+  if (Object.keys(delta).length > 0) {
+    res.write(`data: ${JSON.stringify(buildChatChunkPayload(payload, delta, null))}\n\n`);
+  }
+  res.write(`data: ${JSON.stringify(buildChatChunkPayload(payload, {}, choice?.finish_reason || inferFinishReason(message)))}\n\n`);
+  res.write("data: [DONE]\n\n");
+  res.end();
+}
+
+function buildChatChunkPayload(payload, delta, finishReason) {
+  return {
+    id: payload?.id || `chatcmpl_${Date.now()}`,
+    object: "chat.completion.chunk",
+    created: payload?.created || Math.floor(Date.now() / 1000),
+    model: payload?.model || "fallback",
+    choices: [
+      {
+        index: 0,
+        delta,
+        finish_reason: finishReason,
+      },
+    ],
+  };
+}
+
+function inferFinishReason(message) {
+  if (Array.isArray(message?.tool_calls) && message.tool_calls.length > 0) {
+    return "tool_calls";
+  }
+  return "stop";
 }
