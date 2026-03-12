@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 import { badRequest, jsonResponse, readJsonBody, readRawBody } from "../util/http.js";
 import { createScribeService } from "../services/scribeService.js";
 import { createNoteGenerator } from "../providers/note/index.js";
@@ -110,6 +111,29 @@ export function createApp({ config }) {
           return jsonResponse(res, 200, bootstrap);
         }
 
+        if (req.method === "GET" && req.url === "/v1/client/admin/clients") {
+          if (ensureAdminAuthorized(req, res, config)) return;
+          return jsonResponse(res, 200, { clients: clientAccess.listClients() });
+        }
+
+        if (req.method === "POST" && req.url === "/v1/client/admin/promote") {
+          if (ensureAdminAuthorized(req, res, config)) return;
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
+          if (!body || typeof body.clientId !== "string" || !body.clientId.trim()) {
+            return jsonResponse(res, 400, { error: "clientId is required" });
+          }
+
+          const result = clientAccess.promoteClient(body.clientId.trim(), {
+            resetUsage: body.resetUsage === true,
+            quotas: {
+              maxRequests: body.maxRequests,
+              maxAudioSeconds: body.maxAudioSeconds,
+              maxEstimatedCostUsd: body.maxEstimatedCostUsd,
+            },
+          });
+          return jsonResponse(res, 200, result);
+        }
+
         if (req.method === "POST" && req.url === "/v1/encounters/scribe") {
           const auth = authorizeScribeRequest(req, res, config, clientAccess);
           if (!auth) return;
@@ -127,10 +151,56 @@ export function createApp({ config }) {
           return jsonResponse(res, 200, result);
         }
 
+        if (req.method === "POST" && req.url === "/v1/chat/completions") {
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
+
+          const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
+          const upstream = await fetchBergetChatCompletion(config, body);
+
+          if (!upstream.ok) {
+            return relayChatError(res, upstream);
+          }
+
+          if (body?.stream) {
+            const quota = auth.kind === "client"
+              ? clientAccess.recordChatUsage(auth.clientId)
+              : null;
+            return relayStreamingChatResponse(res, upstream, quota);
+          }
+
+          const payload = await decodeUpstreamJson(upstream);
+          const quota = auth.kind === "client"
+            ? clientAccess.recordChatUsage(auth.clientId)
+            : null;
+
+          if (quota && payload && typeof payload === "object" && !Array.isArray(payload)) {
+            payload.clientQuota = quota;
+          }
+
+          res.statusCode = upstream.status;
+          res.setHeader("content-type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(payload));
+          return;
+        }
+
         if (req.method === "POST" && req.url === "/v1/transcribe") {
-          if (ensureAdminAuthorized(req, res, config)) return;
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
           const body = await readJsonBody(req, { maxBytes: config.http.maxRequestBytes });
           const transcript = await scribeService.transcribeOnly(body);
+          if (auth.kind === "client") {
+            transcript.clientQuota = clientAccess.recordScribeUsage(auth.clientId, {
+              input: body,
+              result: transcript,
+            });
+          }
           return jsonResponse(res, 200, transcript);
         }
 
@@ -162,7 +232,11 @@ export function createApp({ config }) {
         }
 
         if (req.method === "POST" && req.url === "/v1/transcribe/upload") {
-          if (ensureAdminAuthorized(req, res, config)) return;
+          const auth = authorizeScribeRequest(req, res, config, clientAccess);
+          if (!auth) return;
+          if (auth.kind === "client") {
+            clientAccess.assertCanUseClient(auth.clientId);
+          }
           const contentType = req.headers?.["content-type"] || "";
           if (!String(contentType).toLowerCase().includes("multipart/form-data")) {
             throw badRequest("Expected multipart/form-data");
@@ -175,19 +249,29 @@ export function createApp({ config }) {
             throw badRequest('Missing file field "audio"');
           }
 
-          const transcript = await scribeService.transcribeOnly({
+          const input = {
             audioBase64: audio.buffer.toString("base64"),
             audioMimeType: audio.contentType,
             language: req.headers?.["x-scribe-language"],
             locale: req.headers?.["x-scribe-locale"],
             country: req.headers?.["x-scribe-country"],
-          });
+          };
+          const transcript = await scribeService.transcribeOnly(input);
 
-          return jsonResponse(res, 200, {
+          const responsePayload = {
             ...transcript,
             filename: audio.filename,
             bytes: audio.buffer.length,
-          });
+          };
+
+          if (auth.kind === "client") {
+            responsePayload.clientQuota = clientAccess.recordScribeUsage(auth.clientId, {
+              input,
+              result: responsePayload,
+            });
+          }
+
+          return jsonResponse(res, 200, responsePayload);
         }
 
         if (req.method === "POST" && req.url === "/v1/export/fhir-document-reference") {
@@ -273,11 +357,12 @@ export function createApp({ config }) {
 }
 
 function ensureAdminAuthorized(req, res, config) {
-  if (isAdminAuthorized(req, config)) {
-    return false;
+  if (!config?.auth?.bearerToken) {
+    jsonResponse(res, 503, { error: "Admin API is disabled." });
+    return true;
   }
 
-  if (!config?.auth?.bearerToken) {
+  if (isAdminAuthorized(req, config)) {
     return false;
   }
 
@@ -289,7 +374,7 @@ function ensureAdminAuthorized(req, res, config) {
 function isAdminAuthorized(req, config) {
   const expected = config?.auth?.bearerToken || "";
   if (!expected) {
-    return true;
+    return false;
   }
 
   const header = req.headers?.authorization || req.headers?.Authorization || "";
@@ -332,4 +417,100 @@ function getRequestIp(req) {
   }
 
   return req.socket?.remoteAddress || "";
+}
+
+async function fetchBergetChatCompletion(config, body) {
+  if (!config?.berget?.apiKey) {
+    const error = new Error("BERGET_API_KEY is not configured for hosted chat.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const upstreamBody = normalizeChatCompletionBody(config, body);
+  const upstreamURL = `${String(config.berget.baseUrl || "https://api.berget.ai").replace(/\/+$/, "")}/v1/chat/completions`;
+
+  return fetch(upstreamURL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.berget.apiKey}`,
+    },
+    body: JSON.stringify(upstreamBody),
+  });
+}
+
+function normalizeChatCompletionBody(config, body) {
+  const payload = body && typeof body === "object" ? { ...body } : {};
+  if (!payload.model) {
+    payload.model = config?.berget?.noteModel || "openai/gpt-oss-120b";
+  }
+  if (!Array.isArray(payload.messages)) {
+    payload.messages = [];
+  }
+  return payload;
+}
+
+async function relayChatError(res, upstream) {
+  const text = await upstream.text();
+  res.statusCode = upstream.status;
+  res.setHeader("content-type", upstream.headers.get("content-type") || "application/json; charset=utf-8");
+  res.end(text);
+}
+
+async function decodeUpstreamJson(upstream) {
+  const text = await upstream.text();
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error: {
+        message: "Hosted chat upstream returned non-JSON content.",
+        raw: text,
+      },
+    };
+  }
+}
+
+async function relayStreamingChatResponse(res, upstream, quota) {
+  res.statusCode = upstream.status;
+  copyUpstreamHeader(upstream, res, "content-type", "text/event-stream; charset=utf-8");
+  copyUpstreamHeader(upstream, res, "cache-control", "no-cache");
+  copyUpstreamHeader(upstream, res, "connection", "keep-alive");
+
+  if (quota) {
+    res.setHeader("x-eir-trial-remaining-requests", String(quota.remaining.requests));
+    res.setHeader("x-eir-trial-remaining-usd", String(quota.remaining.estimatedCostUsd));
+  }
+
+  const chunks = [];
+  if (!upstream.body) {
+    res.end();
+    return;
+  }
+
+  for await (const chunk of Readable.fromWeb(upstream.body)) {
+    if (typeof res.write === "function") {
+      res.write(chunk);
+    } else {
+      chunks.push(Buffer.from(chunk));
+    }
+  }
+
+  if (chunks.length > 0) {
+    res.end(Buffer.concat(chunks));
+    return;
+  }
+
+  res.end();
+}
+
+function copyUpstreamHeader(upstream, res, name, fallback) {
+  const value = upstream.headers.get(name) || fallback;
+  if (value) {
+    res.setHeader(name, value);
+  }
 }
