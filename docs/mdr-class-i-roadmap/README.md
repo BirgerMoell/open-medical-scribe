@@ -70,6 +70,7 @@ For the Class I path to remain credible, the CE-marked product must stay tightly
 - `supported-browser-matrix.md`: validated browser support boundary for v1
 - `release-control-records.md`: release approval and production baseline record pack
 - `document-control-register.md`: document ID, version, and owner register for the roadmap set
+- `classification-readiness-checklist.md`: the single checklist of what Birger / Moëll et al AB still need to close
 
 ## Primary sources
 
@@ -85,5 +86,5 @@ For the Class I path to remain credible, the CE-marked product must stay tightly
 
 1. Replace working supplier baselines with contract-backed supplier approvals and review dates.
 2. Name the external PRRC appointee and link qualification evidence.
-3. Add dedicated protocol/report IDs beyond the broad regression-suite artifact.
-4. Move the document set from generic draft `0.1` control metadata to approved controlled revisions.
+3. Implement the product controls required by the checklist, especially review-before-export and regulated-build feature gating.
+4. Add dedicated protocol/report IDs beyond the broad regression-suite artifact.

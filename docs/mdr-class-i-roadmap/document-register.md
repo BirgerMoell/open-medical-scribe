@@ -44,6 +44,7 @@ This register lists the first document set needed for an ordinary Class I MDR pa
 | Requirements-risk-test traceability matrix | Link requirements, hazards, and planned evidence | Draft started |
 | Test evidence register | Record executed evidence artifacts linked into the roadmap | Draft started |
 | Document control register | Record document IDs, versions, and owners across the roadmap set | Draft started |
+| Classification readiness checklist | Track exactly what still needs to be closed for Class I self-declaration | Draft started |
 | Labeling and IFU pack | User-facing regulated information | Draft started |
 | UDI assignment record | Track Basic UDI-DI and device identifiers | Not started |
 | EUDAMED registration record | Track actor and device registration status | Not started |
